@@ -13,10 +13,10 @@ export function InfoPage({ eyebrow, title, children }: InfoPageProps) {
     <main>
       <nav className="info-nav" aria-label="Main navigation">
         <Link className="brand" href="/">
-          <Image className="brand-logo" src="/brand/logo.png" alt="" width={42} height={42} priority />
-          <span>Farady</span>
+          <Image className="brand-logo" src="/brand/logo.png?v=20260927" alt="" width={42} height={42} priority />
+          <span>Faraday AI</span>
         </Link>
-        <Link className="back-link" href="/">← Back to home</Link>
+        <Link className="back-link" href="/">Ã¢â€ Â Back to home</Link>
       </nav>
       <article className="info-content section-shell">
         <p className="eyebrow">{eyebrow}</p>
