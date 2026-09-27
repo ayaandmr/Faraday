@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { PilotCta } from "../components/pilot-cta";
 import { SiteFooter } from "../components/site-footer";
 
@@ -43,7 +44,8 @@ export default function Home() {
     <main>
       <nav aria-label="Main navigation" className="nav-shell">
         <a className="brand" href="#top" aria-label="Faraday home">
-          <span className="brand-orb" aria-hidden="true">✦</span> Faraday
+          <Image className="brand-logo" src="/brand/logo.png" alt="" width={42} height={42} priority />
+          <span>Faraday</span>
         </a>
         <div className="nav-links">
           <a href="#how-it-works">How it works</a>

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { SiteFooter } from "./site-footer";
 
@@ -11,7 +12,10 @@ export function InfoPage({ eyebrow, title, children }: InfoPageProps) {
   return (
     <main>
       <nav className="info-nav" aria-label="Main navigation">
-        <Link className="brand" href="/"><span className="brand-orb" aria-hidden="true">✦</span> Faraday</Link>
+        <Link className="brand" href="/">
+          <Image className="brand-logo" src="/brand/logo.png" alt="" width={42} height={42} priority />
+          <span>Faraday</span>
+        </Link>
         <Link className="back-link" href="/">← Back to home</Link>
       </nav>
       <article className="info-content section-shell">

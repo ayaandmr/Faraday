@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export function SiteFooter() {
@@ -5,7 +6,10 @@ export function SiteFooter() {
     <footer className="footer section-shell">
       <div className="footer-atmosphere" aria-hidden="true" />
       <div className="footer-group footer-intro">
-        <h2>Faraday</h2>
+        <h2 className="footer-brand-heading">
+          <Image className="footer-logo" src="/brand/logo.png" alt="" width={52} height={52} />
+          <span>Faraday</span>
+        </h2>
         <Link href="/about">About us</Link>
         <Link href="/#pilot">School pilot</Link>
       </div>
