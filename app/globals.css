@@ -282,3 +282,27 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--yellow-deep); o
   .pilot-content > p:last-of-type { margin-bottom: 32px; }
   .footer { padding-top: 72px; padding-bottom: 42px; }
 }
+/* Hero actions, centered footer, and contained pilot card */
+.button-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--ink);
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 4px 0 var(--ink);
+  transition: transform .2s ease, background .2s ease;
+}
+.button-secondary:hover { background: #fff9dc; transform: translateY(-2px); }
+.pilot { width: min(calc(100% - 64px), 1160px); }
+.footer { text-align: center; }
+.footer-group { align-items: center; }
+.footer-brand-heading { justify-content: center; }
+.footer-copyright { text-align: center; }
+
+@media (max-width: 650px) {
+  .hero-actions { align-items: center; flex-direction: row; flex-wrap: nowrap; gap: 8px; }
+  .hero-actions .button { min-height: 48px; padding: 13px 10px; font-size: 11px; white-space: nowrap; }
+  .hero-actions .button-secondary { box-shadow: 0 3px 0 var(--ink); }
+  .pilot { width: calc(100% - 44px); }
+}

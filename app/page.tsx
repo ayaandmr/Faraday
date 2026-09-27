@@ -41,7 +41,7 @@ export default function Home() {
           <p className="hero-text">Faraday AI does not just answer your questions. It learns how you learn, finds the gaps holding you back, and helps you take the next step with confidence.</p>
           <div className="hero-actions">
             <PilotCta label="Meet Faraday AI" />
-            <a className="text-link" href="#how-it-works">See the learning loop <span aria-hidden="true">&darr;</span></a>
+            <a className="button button-secondary" href="#how-it-works">See the learning loop <span aria-hidden="true">&darr;</span></a>
           </div>
           <p className="microcopy">Your personal learning memory. Built to grow with you over time.</p>
         </div>
