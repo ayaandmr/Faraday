@@ -13,7 +13,7 @@ export function PilotCta({ className = "", label = "Join the pilot" }: PilotCtaP
   return (
     <>
       <button className={`button button-primary ${className}`} onClick={() => setIsOpen(true)}>
-        {label} <span aria-hidden="true">â†’</span>
+        {label} <span aria-hidden="true">→</span>
       </button>
       {isOpen && (
         <div className="dialog-backdrop" role="presentation" onMouseDown={() => setIsOpen(false)}>
@@ -24,10 +24,10 @@ export function PilotCta({ className = "", label = "Join the pilot" }: PilotCtaP
             role="dialog"
             onMouseDown={(event) => event.stopPropagation()}
           >
-            <span className="dialog-spark" aria-hidden="true">âœ¦</span>
+            <span className="dialog-spark" aria-hidden="true">✦</span>
             <h2 id="pilot-dialog-title">The pilot is coming soon.</h2>
             <p>
-              We&apos;re preparing Faraday AI for its first classroom pilots. There&apos;s nothing to sign up for yetâ€”check back soon.
+              We&apos;re preparing Faraday AI for its first classroom pilots. There&apos;s nothing to sign up for yet—check back soon.
             </p>
             <button autoFocus className="button button-dark" onClick={() => setIsOpen(false)}>
               Got it

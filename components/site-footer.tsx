@@ -7,7 +7,7 @@ export function SiteFooter() {
       <div className="footer-atmosphere" aria-hidden="true" />
       <div className="footer-group footer-intro">
         <h2 className="footer-brand-heading">
-          <Image className="footer-logo" src="/brand/logo.png?v=20260927" alt="" width={52} height={52} />
+          <Image className="footer-logo" src="/brand/logo.png" alt="" width={52} height={52} />
           <span>Faraday AI</span>
         </h2>
         <Link href="/about">About us</Link>
@@ -36,7 +36,7 @@ export function SiteFooter() {
         <Link href="/privacy">Privacy</Link>
         <Link href="/terms">Terms</Link>
       </div>
-      <p className="footer-copyright">Ãƒâ€šÃ‚Â© {new Date().getFullYear()} Faraday AI</p>
+      <p className="footer-copyright">© {new Date().getFullYear()} Faraday AI</p>
     </footer>
   );
 }

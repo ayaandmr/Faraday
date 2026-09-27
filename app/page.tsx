@@ -23,7 +23,7 @@ export default function Home() {
     <main>
       <nav aria-label="Main navigation" className="nav-shell">
         <a className="brand" href="#top" aria-label="Faraday AI home">
-          <Image className="brand-logo" src="/brand/logo.png?v=20260927" alt="" width={42} height={42} priority />
+          <Image className="brand-logo" src="/brand/logo.png" alt="" width={42} height={42} priority />
           <span>Faraday AI</span>
         </a>
         <div className="nav-links">
