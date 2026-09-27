@@ -27,7 +27,7 @@ export function PilotCta({ className = "", label = "Join the pilot" }: PilotCtaP
             <span className="dialog-spark" aria-hidden="true">✦</span>
             <h2 id="pilot-dialog-title">The pilot is coming soon.</h2>
             <p>
-              We&apos;re preparing Faraday for its first classroom pilots. There&apos;s nothing to sign up for yet—check back soon.
+              We&apos;re preparing Farady for its first classroom pilots. There&apos;s nothing to sign up for yet—check back soon.
             </p>
             <button autoFocus className="button button-dark" onClick={() => setIsOpen(false)}>
               Got it

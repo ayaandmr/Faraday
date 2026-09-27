@@ -14,7 +14,7 @@ export function InfoPage({ eyebrow, title, children }: InfoPageProps) {
       <nav className="info-nav" aria-label="Main navigation">
         <Link className="brand" href="/">
           <Image className="brand-logo" src="/brand/logo.png" alt="" width={42} height={42} priority />
-          <span>Faraday</span>
+          <span>Farady</span>
         </Link>
         <Link className="back-link" href="/">← Back to home</Link>
       </nav>
