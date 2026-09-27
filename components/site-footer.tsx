@@ -3,6 +3,7 @@ import Link from "next/link";
 export function SiteFooter() {
   return (
     <footer className="footer section-shell">
+      <div className="footer-atmosphere" aria-hidden="true" />
       <div className="footer-group footer-intro">
         <h2>Faraday</h2>
         <Link href="/about">About us</Link>
@@ -31,7 +32,7 @@ export function SiteFooter() {
         <Link href="/privacy">Privacy</Link>
         <Link href="/terms">Terms</Link>
       </div>
-      <p className="footer-copyright">© {new Date().getFullYear()} Faraday</p>
+      <p className="footer-copyright">Â© {new Date().getFullYear()} Faraday</p>
     </footer>
   );
 }
