@@ -10,17 +10,20 @@
     "typecheck": "node ./node_modules/typescript/bin/tsc --noEmit"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.9.7",
     "next": "^16.0.10",
-    "react": "19.2.0",
-    "react-dom": "19.2.0"
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "baseline-browser-mapping": "^2.11.26",
     "eslint": "^9.0.0",
     "eslint-config-next": "16.0.0",
+    "tailwindcss": "^4.3.3",
     "typescript": "^5.0.0"
   }
 }
