@@ -1,1 +1,10 @@
 @import "tailwindcss";
+
+@layer components {
+  .eyebrow { @apply text-[11px] font-extrabold uppercase tracking-[1.25px] text-[#246946]; }
+  h1 { @apply mt-2 text-[clamp(32px,4vw,52px)] font-bold leading-[.98] tracking-[-2.5px]; }
+  h2 { @apply font-bold leading-[1.03] tracking-[-1.25px]; }
+  .intro { @apply mt-3 max-w-[620px] text-sm leading-relaxed text-[#6c806f] min-[600px]:text-[15px]; }
+  .section-heading { @apply flex items-end justify-between gap-4; }
+  .section-heading > a { @apply rounded-xl px-3 py-2 text-sm font-extrabold text-[#246946] transition hover:bg-[#eaf5ea]; }
+}

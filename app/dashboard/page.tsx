@@ -1,10 +1,5 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
-import { HomeDashboard } from "../../components/home-dashboard";
+import { StudentPage } from "../../components/student-page";
 
-export default async function DashboardPage() {
-  await auth.protect();
-  const user = await currentUser();
-  const firstName = user?.firstName ?? "Learner";
-
-  return <HomeDashboard firstName={firstName} />;
+export default function DashboardPage() {
+  return <StudentPage page="learning" />;
 }
