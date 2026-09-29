@@ -1,5 +1,8 @@
+"use client";
+
 import Image from "next/image";
 import { Show, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
+import { ThemeToggle } from "./theme-toggle";
 
 export function SiteNav() {
   return (
@@ -13,6 +16,7 @@ export function SiteNav() {
         <a href="#for-students">For students</a>
         <a href="#pilot">Pilot</a>
       </div>
+      <ThemeToggle compact />
       <Show when="signed-out">
         <div className="ml-auto flex items-center gap-2 min-[651px]:ml-0">
           <SignInButton><button className="whitespace-nowrap px-2 py-2 text-[11px] font-extrabold text-[#17352a] hover:text-[#246946] min-[651px]:px-3 min-[651px]:text-sm">Log in</button></SignInButton>

@@ -10,7 +10,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className="scroll-smooth scroll-pt-[126px]">
+    <html lang="en" className="scroll-smooth scroll-pt-[126px]" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('faraday-theme');var d=t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d)}catch(e){}})()` }} />
+      </head>
       <body className="m-0 bg-[#fffdf5] font-[Arial,Helvetica,sans-serif] text-[#17352a]"><ClerkProvider>{children}</ClerkProvider></body>
     </html>
   );

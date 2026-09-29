@@ -20,7 +20,7 @@ const features = [
 
 export default function Home() {
   return (
-    <main>
+    <main className="landing-page">
 
       <SiteNav />
 

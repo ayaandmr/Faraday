@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer components {
   .eyebrow { @apply text-[11px] font-extrabold uppercase tracking-[1.25px] text-[#246946]; }
   h1 { @apply mt-2 text-[clamp(32px,4vw,52px)] font-bold leading-[.98] tracking-[-2.5px]; }
@@ -8,3 +10,127 @@
   .section-heading { @apply flex items-end justify-between gap-4; }
   .section-heading > a { @apply rounded-xl px-3 py-2 text-sm font-extrabold text-[#246946] transition hover:bg-[#eaf5ea]; }
 }
+
+.theme-toggle { display: inline-flex; align-items: center; gap: .45rem; border: 1px solid #d3e1c6; border-radius: .75rem; background: #fff; color: #246946; padding: .55rem .7rem; font-size: .75rem; font-weight: 800; transition: transform .2s, background .2s; }
+.theme-toggle:hover { transform: translateY(-1px); background: #eff9ed; }
+.theme-toggle-compact { padding: .52rem; }
+.theme-toggle-compact .theme-toggle-label { display: none; }
+
+html.dark {
+  color-scheme: dark;
+  --faraday-canvas: #09120e;
+  --faraday-surface: #101c16;
+  --faraday-surface-raised: #17271e;
+  --faraday-surface-soft: #1d3025;
+  --faraday-border: #304b3a;
+  --faraday-text: #edf7ef;
+  --faraday-muted: #adc2b2;
+  --faraday-green: #78d79b;
+  --faraday-yellow-soft: #3b3217;
+  --faraday-yellow-border: #756326;
+}
+
+html.dark body { background: var(--faraday-canvas) !important; color: var(--faraday-text); }
+html.dark .theme-toggle { border-color: var(--faraday-border); background: var(--faraday-surface-raised); color: #f6d95b; box-shadow: 0 2px 0 #07100b; }
+html.dark .theme-toggle:hover { background: #22382b; }
+
+/* Shared page canvases and elevated surfaces */
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) { background-color: var(--faraday-canvas) !important; color: var(--faraday-text); }
+html.dark .learning-app main { background: var(--faraday-canvas) !important; color: var(--faraday-text) !important; }
+html.dark .learning-app main > div { background: var(--faraday-surface) !important; border-color: var(--faraday-border) !important; box-shadow: 0 18px 60px rgb(0 0 0 / .32) !important; }
+html.dark .learning-app aside { background: #0d1913 !important; border-color: var(--faraday-border) !important; }
+html.dark .learning-app main > div > section { background: var(--faraday-surface) !important; }
+html.dark .learning-card { background: var(--faraday-surface-raised) !important; border-color: var(--faraday-border) !important; }
+html.dark .info-page > article { color: var(--faraday-text); }
+
+/* Light surfaces used throughout cards, fields and navigation */
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="bg-white"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="bg-[#fffdf5]"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="bg-[#fffdf8]"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="bg-[#fffefa]"] { background-color: var(--faraday-surface-raised) !important; }
+
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="bg-[#f4f8ee]"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="bg-[#f5f8ef]"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="bg-[#f7faef]"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="bg-[#f8fbf4]"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="bg-[#f0f9ef]"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="bg-[#f2f8ee]"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="bg-[#eff8ee]"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="bg-[#edf3e9]"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="bg-[#eaf1e1]"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="bg-[#eaf5ea]"] { background-color: var(--faraday-surface-soft) !important; }
+
+/* Warm teaching panels retain their identity without glowing in dark mode */
+html.dark :is(.landing-page, .learning-app) [class*="bg-[#fff1b9]"],
+html.dark :is(.landing-page, .learning-app) [class*="bg-[#fff5c6]"],
+html.dark :is(.landing-page, .learning-app) [class*="bg-[#fff8d9]"],
+html.dark :is(.landing-page, .learning-app) [class*="bg-[#fff9df]"],
+html.dark :is(.landing-page, .learning-app) [class*="bg-[#fff1b4]"],
+html.dark :is(.landing-page, .learning-app) [class*="bg-[#fff4cf]"],
+html.dark :is(.landing-page, .learning-app) [class*="bg-[#fff9dc]"],
+html.dark :is(.landing-page, .learning-app) [class*="bg-[#f8e4a0]"],
+html.dark :is(.landing-page, .learning-app) [class*="bg-[#f3e7b9]"],
+html.dark :is(.landing-page, .learning-app) [class*="bg-[#fff0d3]"] { background-color: var(--faraday-yellow-soft) !important; border-color: var(--faraday-yellow-border) !important; }
+
+/* Pastel feature cards become rich dark accents */
+html.dark :is(.landing-page, .learning-app) [class*="bg-[#ded5ff]"] { background-color: #352e52 !important; }
+html.dark :is(.landing-page, .learning-app) [class*="bg-[#b8ebc9]"],
+html.dark :is(.landing-page, .learning-app) [class*="bg-[#c7eed7]"],
+html.dark :is(.landing-page, .learning-app) [class*="bg-[#d9efd8]"],
+html.dark :is(.landing-page, .learning-app) [class*="bg-[#ecf9ee]"] { background-color: #1d4a32 !important; }
+html.dark :is(.landing-page, .learning-app) [class*="bg-[#ffb69a]"] { background-color: #643b31 !important; }
+html.dark :is(.landing-page, .learning-app) [class*="bg-[#e4ebda]"],
+html.dark :is(.landing-page, .learning-app) [class*="bg-[#e5ecdc]"],
+html.dark :is(.landing-page, .learning-app) [class*="bg-[#e7ece3]"],
+html.dark :is(.landing-page, .learning-app) [class*="bg-[#eaf0e5]"],
+html.dark :is(.landing-page, .learning-app) [class*="bg-[#edf1e9]"],
+html.dark :is(.landing-page, .learning-app) [class*="bg-[#dce6d9]"] { background-color: #294234 !important; }
+
+/* Text and border contrast */
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="text-[#17352a]"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="text-[#1d"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="text-[#315"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="text-[#385"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="text-[#3f"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="text-[#43"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="text-[#4a"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="text-[#4c"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="text-[#51"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="text-[#52"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="text-[#56"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="text-[#58"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="text-[#60"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="text-[#61"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="text-[#66"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="text-[#68"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="text-[#6a"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="text-[#6b"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="text-[#6d"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="text-[#6e"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="text-[#6f"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="text-[#70"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="text-[#71"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="text-[#72"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="text-[#75"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="text-[#80"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="text-[#81"] { color: var(--faraday-muted) !important; }
+
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="text-[#246"] { color: var(--faraday-green) !important; }
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="border-[#d"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="border-[#e"],
+html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) [class*="divide-[#e"] { border-color: var(--faraday-border) !important; }
+
+html.dark input, html.dark textarea, html.dark select { color: var(--faraday-text); caret-color: var(--faraday-green); }
+html.dark input::placeholder, html.dark textarea::placeholder { color: #839c89 !important; }
+html.dark select { background-color: var(--faraday-surface-soft) !important; border-color: var(--faraday-border) !important; }
+html.dark nav[aria-label="Main navigation"] { border-color: var(--faraday-border) !important; background-color: rgb(16 28 22 / .9) !important; color: var(--faraday-text); box-shadow: 0 8px 32px rgb(0 0 0 / .3) !important; }
+
+/* Keep high-contrast brand accents readable */
+html.dark [class*="bg-[#ffd53d]"] { color: #17261e !important; }
+html.dark [class*="bg-[#143d2b]"] { color: #f8f6e9 !important; }
+html.dark .landing-page #how-it-works, html.dark .landing-page footer { background-color: #09271a !important; }
+html.dark .auth-backdrop { filter: brightness(.34) saturate(.7); }
+html.dark .cl-card { background: var(--faraday-surface-raised); border-color: var(--faraday-border); box-shadow: 0 24px 80px rgb(0 0 0 / .42); }
+html.dark :is(.cl-headerTitle, .cl-formFieldLabel, .cl-footerActionText, .cl-dividerText) { color: var(--faraday-text); }
+html.dark :is(.cl-headerSubtitle, .cl-formFieldHintText, .cl-identityPreviewText) { color: var(--faraday-muted); }
+html.dark .cl-formFieldInput { border-color: var(--faraday-border); background: var(--faraday-surface-soft); color: var(--faraday-text); }
