@@ -36,14 +36,18 @@ flowchart LR
 - Separate dashboard routes for learning, lessons, suggestions, progress, tests, memory, and settings.
 - Interactive prototype lesson, test, memory, and preference flows.
 - Persistent light/dark preference in `localStorage`.
+- Authenticated provider-neutral learning endpoint at `POST /api/learning/respond`.
+- Typed learning request/response contracts and a deterministic mock teacher adapter.
 
 ### Not implemented yet
 
 - No model API is called.
-- No lesson or conversation API exists.
+- The learning API uses a deterministic mock provider; no external LLM is connected.
 - No database or durable student memory exists.
 - No mastery calculation or recommendation engine exists.
 - Refreshing the page resets prototype learning state.
+
+The mock provider proves the full browser-to-server boundary without requiring an API key. It must not be presented as AI-generated teaching.
 
 ## Target architecture
 

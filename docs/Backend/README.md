@@ -1,6 +1,17 @@
 # Backend
 
-The backend is **planned and not yet implemented**. This folder describes the intended boundaries so the first implementation does not become a collection of unrelated route handlers.
+The durable backend is **planned and not yet implemented**. A first provider-neutral learning boundary is now implemented so the team can connect a model later without rewriting the frontend.
+
+## Implemented preparation
+
+- `POST /api/learning/respond` authenticates the Clerk user and validates a bounded request.
+- Shared request and response contracts live in `lib/learning/contracts.ts`.
+- Learning orchestration lives under `lib/server/learning/` rather than inside the route.
+- `TeacherProvider` isolates model-specific code.
+- `MockTeacherProvider` gives the frontend a deterministic end-to-end response without an API key.
+- `FARADAY_TEACHER_PROVIDER=mock` is the only supported provider configuration today.
+
+There is no database, external model call, durable session, memory write, or mastery calculation yet.
 
 ## Proposed modules
 
@@ -39,13 +50,15 @@ Recommendations, broad analytics, scheduled review, and advanced test generation
 | Concern | Proposed choice | Status |
 |---|---|---|
 | Authentication | Clerk | Implemented on frontend/server pages |
-| Application API | Next.js Route Handlers | Planned |
+| Application API | Next.js Route Handler for `/api/learning/respond` | Initial boundary implemented |
 | Primary teaching model | OpenAI `gpt-6-sol` via Responses API | Planned; verify account access |
 | Background model | OpenAI `gpt-6-luna` | Optional/planned |
 | Relational storage | PostgreSQL | Decision pending on provider |
 | Semantic retrieval | `pgvector` in the same database initially | Planned |
 | Schema validation | Zod or equivalent | Decision pending |
 | Observability | Structured server logs plus provider/tooling | Decision pending |
+
+When a provider is chosen, implement a new `TeacherProvider`, add its server-only credentials, validate its structured output, and select it in `provider-factory.ts`. Do not put provider SDK calls in React components or route files.
 
 ## Non-negotiable backend rules
 
@@ -59,3 +72,5 @@ Recommendations, broad analytics, scheduled review, and advanced test generation
 - Log identifiers and timings, not sensitive prompt contents by default.
 
 See [`api-contracts.md`](api-contracts.md), [`data-model.md`](data-model.md), and [`learning-engine.md`](learning-engine.md).
+
+For the exact files and UI route prepared for model integration, see [`provider-integration.md`](provider-integration.md).

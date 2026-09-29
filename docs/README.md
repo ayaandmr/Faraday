@@ -35,7 +35,8 @@ docs/
 │   ├── README.md
 │   ├── api-contracts.md
 │   ├── data-model.md
-│   └── learning-engine.md
+│   ├── learning-engine.md
+│   └── provider-integration.md
 └── Dev/
     ├── getting-started.md
     └── contributing.md

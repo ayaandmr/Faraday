@@ -2,6 +2,21 @@
 
 These contracts describe the first adaptive-learning vertical slice. Exact URLs may change, but request and response responsibilities should remain stable.
 
+## Current preparation endpoint
+
+`POST /api/learning/respond` is implemented as a temporary stateless transport while database persistence is undecided. It accepts `start_topic`, `answer_check`, and `ask_follow_up` actions and currently delegates to the deterministic mock provider.
+
+```json
+{
+  "action": "start_topic",
+  "topic": "Gravity",
+  "style": "sports",
+  "level": "some_knowledge"
+}
+```
+
+Follow-up requests include the returned `sessionId`, `conceptId`, and compact `sessionSummary`. This client-carried state is prototype-only and is not trusted durable memory. Once storage is introduced, the target session endpoints below should load state by authenticated session ownership instead.
+
 ## Conventions
 
 - All endpoints require a Clerk-authenticated user.
@@ -11,6 +26,8 @@ These contracts describe the first adaptive-learning vertical slice. Exact URLs 
 - Validation errors use stable machine-readable codes.
 
 ## Start a learning session
+
+**Target durable contract — not implemented.**
 
 `POST /api/learning/sessions`
 
@@ -37,6 +54,8 @@ These contracts describe the first adaptive-learning vertical slice. Exact URLs 
 ```
 
 ## Submit a lesson turn
+
+**Target durable contract — not implemented.**
 
 `POST /api/learning/sessions/:sessionId/turns`
 

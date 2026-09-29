@@ -28,6 +28,8 @@ NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
 NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
 NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/dashboard
 NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/dashboard
+FARADAY_TEACHER_PROVIDER=mock
+FARADAY_TEACHER_MODEL=
 ```
 
 Do not commit `.env.local` or paste secret values into issues, logs, screenshots, documentation, or chat.
@@ -61,7 +63,7 @@ docs/                    Architecture and contributor documentation
 - Topic, test, memory, and preference changes are temporary React state.
 - Reloading clears those prototype changes.
 - Theme is persisted in the browser under `faraday-theme`.
-- No OpenAI or database request is made.
+- The learning screen calls the authenticated local API, which currently uses a deterministic mock teacher. No OpenAI or database request is made.
 
 ## Common problems
 
