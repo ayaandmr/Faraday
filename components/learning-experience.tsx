@@ -13,14 +13,37 @@ export type LearningPage = "learning" | "learn" | "lessons" | "suggested" | "pro
 type Props = { firstName: string; page: LearningPage };
 
 const nav = [
-  ["/dashboard", "learning", "My learning", "⌂"],
-  ["/dashboard/learn", "learn", "Start a topic", "+"],
-  ["/dashboard/lessons", "lessons", "Lessons", "◫"],
-  ["/dashboard/suggested", "suggested", "Suggested for you", "✦"],
-  ["/dashboard/progress", "progress", "My progress", "↗"],
-  ["/dashboard/tests", "tests", "Tests", "✓"],
-  ["/dashboard/memory", "memory", "Memory & preferences", "◌"],
+  ["/dashboard", "learning", <SidebarLabel key="learning" label="My learning" status="pending" />, <SidebarIcon key="home" name="home" />],
+  ["/dashboard/learn", "learn", <SidebarLabel key="learn" label="Start a topic" status="asap" />, <SidebarIcon key="sparkle" name="sparkle" />],
+  ["/dashboard/lessons", "lessons", <SidebarLabel key="lessons" label="Lessons" status="soon" />, <SidebarIcon key="book" name="book" />],
+  ["/dashboard/suggested", "suggested", <SidebarLabel key="suggested" label="Suggested for you" status="soon" />, <SidebarIcon key="compass" name="compass" />],
+  ["/dashboard/progress", "progress", <SidebarLabel key="progress" label="My progress" status="soon" />, <SidebarIcon key="chart" name="chart" />],
+  ["/dashboard/tests", "tests", <SidebarLabel key="tests" label="Tests" status="soon" />, <SidebarIcon key="checklist" name="checklist" />],
+  ["/dashboard/memory", "memory", <SidebarLabel key="memory" label="Memory & preferences" status="soon" />, <SidebarIcon key="brain" name="brain" />],
 ] as const;
+
+type SidebarStatus = "asap" | "pending" | "soon";
+
+function SidebarLabel({ label, status }: { label: string; status?: SidebarStatus }) {
+  const statusLabel = status === "asap" ? "ASAP" : status === "pending" ? "Pending" : "Soon";
+  return <span className="flex min-w-0 flex-1 items-center justify-between gap-2"><span className="truncate">{label}</span>{status && <span className={`sidebar-status sidebar-status-${status}`} title={`${statusLabel}: work still needed`}><span>{statusLabel}</span></span>}</span>;
+}
+
+type SidebarIconName = "home" | "sparkle" | "book" | "compass" | "chart" | "checklist" | "brain";
+
+function SidebarIcon({ name }: { name: SidebarIconName }) {
+  const paths: Record<SidebarIconName, ReactNode> = {
+    home: <><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z" /><path d="M9 21v-6h6v6" /></>,
+    sparkle: <><path d="m12 3 1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7Z" /><path d="m19 16 .7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7Z" /></>,
+    book: <><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21Z" /><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5A2.5 2.5 0 0 1 20 21Z" /></>,
+    compass: <><circle cx="12" cy="12" r="8.5" /><path d="m15.5 8.5-2.2 4.8-4.8 2.2 2.2-4.8Z" /></>,
+    chart: <><path d="M4 20V4" /><path d="M4 20h17" /><path d="m7 15 4-4 3 2 5-6" /><path d="M16 7h3v3" /></>,
+    checklist: <><rect x="5" y="3" width="14" height="18" rx="2" /><path d="M9 3.5h6v3H9z" /><path d="m8.5 11 1.5 1.5 3-3" /><path d="M14.5 11H16" /><path d="m8.5 16 1.5 1.5 3-3" /><path d="M14.5 16H16" /></>,
+    brain: <><path d="M9.5 4.2A3.2 3.2 0 0 0 4 6.5a3.2 3.2 0 0 0 .1 5.8A3.4 3.4 0 0 0 7 17.8V20h3V4.2Z" /><path d="M14.5 4.2A3.2 3.2 0 0 1 20 6.5a3.2 3.2 0 0 1-.1 5.8 3.4 3.4 0 0 1-2.9 5.5V20h-3V4.2Z" /><path d="M7 8h2.5M17 8h-2.5M7 13h2.5M17 13h-2.5" /></>,
+  };
+
+  return <svg viewBox="0 0 24 24" className="size-[18px]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
+}
 
 const tracks = [
   { subject: "Physics", title: "Why objects orbit", detail: "Continue from your last question", percent: 62, color: "bg-[#ffd53d]", icon: "🚀" },

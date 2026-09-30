@@ -16,6 +16,11 @@
 .theme-toggle-compact { padding: .52rem; }
 .theme-toggle-compact .theme-toggle-label { display: none; }
 
+.sidebar-status { display: inline-flex; flex: none; align-items: center; border: 1px solid; border-radius: 9999px; padding: .18rem .42rem; font-size: 9px; font-weight: 800; letter-spacing: .055em; line-height: 1; text-transform: uppercase; }
+.sidebar-status-asap { border-color: #e5a084; background: #ffded1; color: #873b27; }
+.sidebar-status-pending { border-color: #c3ccd8; background: #edf1f5; color: #566675; }
+.sidebar-status-soon { border-color: #d9bb41; background: #fff1b4; color: #705604; }
+
 html.dark {
   color-scheme: dark;
   --faraday-canvas: #09120e;
@@ -33,6 +38,9 @@ html.dark {
 html.dark body { background: var(--faraday-canvas) !important; color: var(--faraday-text); }
 html.dark .theme-toggle { border-color: var(--faraday-border); background: var(--faraday-surface-raised); color: #f6d95b; box-shadow: 0 2px 0 #07100b; }
 html.dark .theme-toggle:hover { background: #22382b; }
+html.dark .sidebar-status-asap { border-color: #9b5947; background: #5c3229; color: #ffd2c4; }
+html.dark .sidebar-status-pending { border-color: #596b79; background: #273640; color: #c8d6e0; }
+html.dark .sidebar-status-soon { border-color: #756326; background: #3b3217; color: #f2d96b; }
 
 /* Shared page canvases and elevated surfaces */
 html.dark :is(.landing-page, .learning-app, .info-page, .auth-page) { background-color: var(--faraday-canvas) !important; color: var(--faraday-text); }
