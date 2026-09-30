@@ -1,76 +1,15 @@
 # Backend
 
-The durable backend is **planned and not yet implemented**. A first provider-neutral learning boundary is now implemented so the team can connect a model later without rewriting the frontend.
+The durable Start a Topic backend is implemented. It uses Clerk identity, Groq `openai/gpt-oss-20b` strict structured output, and Supabase Postgres. The model creates short teaching cards; the server owns authorization, progress, memory filtering, and persistence.
 
-## Implemented preparation
+Implemented routes:
 
-- `POST /api/learning/respond` authenticates the Clerk user and validates a bounded request.
-- Shared request and response contracts live in `lib/learning/contracts.ts`.
-- Learning orchestration lives under `lib/server/learning/` rather than inside the route.
-- `TeacherProvider` isolates model-specific code.
-- `MockTeacherProvider` gives the frontend a deterministic end-to-end response without an API key.
-- `FARADAY_TEACHER_PROVIDER=mock` is the only supported provider configuration today.
+- `GET` and `DELETE /api/learning/profile`
+- `GET` and `POST /api/learning/sessions`
+- `GET /api/learning/sessions/:sessionId`
+- `POST /api/learning/sessions/:sessionId/turns`
+- `GET /api/cron/cleanup-learning`
 
-There is no database, external model call, durable session, memory write, or mastery calculation yet.
+Before local or deployed use, run `supabase/migrations/202609300001_faraday_learning.sql` and configure `GROQ_API_KEY`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, and `CRON_SECRET` as server-only variables. See the API, data, and provider documents in this folder for the contract details.
 
-## Proposed modules
-
-```text
-server/
-├── auth/                 Clerk user resolution and authorization
-├── api/                  Request schemas and response mapping
-├── learning/             Teaching Orchestrator and lesson state machine
-├── models/               OpenAI adapter and structured-output schemas
-├── memory/               Candidate extraction, approval and retrieval
-├── mastery/              Evidence scoring and review scheduling
-├── recommendations/      Next-topic ranking
-├── curriculum/           Topic graph and trusted learning content
-├── db/                   Database client, queries and transactions
-└── observability/        Logs, metrics, traces and product events
-```
-
-The final location may use `lib/server/` or another project convention. The important rule is that business logic must not live directly inside API route files.
-
-## Initial vertical slice
-
-Implement only one end-to-end adaptive lesson before building every dashboard feature:
-
-1. Create a topic session.
-2. Generate subtopic options and one diagnostic question.
-3. Accept an answer.
-4. Generate a personalized explanation and check question.
-5. Record learning evidence.
-6. Save the session summary and next action.
-7. Resume it from My Learning.
-
-Recommendations, broad analytics, scheduled review, and advanced test generation can remain prototype data until this loop is reliable.
-
-## Proposed infrastructure
-
-| Concern | Proposed choice | Status |
-|---|---|---|
-| Authentication | Clerk | Implemented on frontend/server pages |
-| Application API | Next.js Route Handler for `/api/learning/respond` | Initial boundary implemented |
-| Primary teaching model | OpenAI `gpt-6-sol` via Responses API | Planned; verify account access |
-| Background model | OpenAI `gpt-6-luna` | Optional/planned |
-| Relational storage | PostgreSQL | Decision pending on provider |
-| Semantic retrieval | `pgvector` in the same database initially | Planned |
-| Schema validation | Zod or equivalent | Decision pending |
-| Observability | Structured server logs plus provider/tooling | Decision pending |
-
-When a provider is chosen, implement a new `TeacherProvider`, add its server-only credentials, validate its structured output, and select it in `provider-factory.ts`. Do not put provider SDK calls in React components or route files.
-
-## Non-negotiable backend rules
-
-- Never expose API or database secrets to client components.
-- Authenticate and authorize every student-specific request.
-- Validate every request and every structured model response.
-- Do not let the model issue arbitrary database commands.
-- Store evidence separately from derived mastery scores.
-- Make memory writes typed, inspectable, and reversible.
-- Add rate limits and bounded output tokens before public testing.
-- Log identifiers and timings, not sensitive prompt contents by default.
-
-See [`api-contracts.md`](api-contracts.md), [`data-model.md`](data-model.md), and [`learning-engine.md`](learning-engine.md).
-
-For the exact files and UI route prepared for model integration, see [`provider-integration.md`](provider-integration.md).
+Recommendations, broad analytics, advanced tests, and student-facing memory editing are not part of this vertical slice yet.

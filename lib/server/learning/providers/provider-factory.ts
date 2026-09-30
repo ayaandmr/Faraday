@@ -1,10 +1,8 @@
 import type { TeacherProvider } from "./teacher-provider";
-import { MockTeacherProvider } from "./mock-teacher-provider";
+import { GroqTeacherProvider } from "./groq-teacher-provider";
 
 export function getTeacherProvider(): TeacherProvider {
-  const provider = process.env.FARADAY_TEACHER_PROVIDER?.trim().toLowerCase() || "mock";
-
-  if (provider === "mock") return new MockTeacherProvider();
-
-  throw new Error(`Teacher provider "${provider}" is not installed. Set FARADAY_TEACHER_PROVIDER=mock until a model adapter is configured.`);
+  const provider = process.env.FARADAY_TEACHER_PROVIDER?.trim().toLowerCase() || "groq";
+  if (provider === "groq") return new GroqTeacherProvider();
+  throw new Error(`Teacher provider "${provider}" is not installed. Set FARADAY_TEACHER_PROVIDER=groq.`);
 }

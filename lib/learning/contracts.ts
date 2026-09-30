@@ -1,54 +1,48 @@
 export const teachingStyles = ["sports", "practical", "story", "space", "game-like", "direct"] as const;
 export const learnerLevels = ["new", "some_knowledge", "test_me"] as const;
-export const learningActions = ["start_topic", "answer_check", "ask_follow_up"] as const;
+export const gradeLevels = [8, 9, 10, 11, 12] as const;
 
 export type TeachingStyle = (typeof teachingStyles)[number];
 export type LearnerLevel = (typeof learnerLevels)[number];
-export type LearningAction = (typeof learningActions)[number];
+export type GradeLevel = (typeof gradeLevels)[number];
+export type LearningPhase = "choose_subtopic" | "diagnose" | "teach" | "check_understanding" | "complete";
+export type ProgressStatus = "exploring" | "learning" | "needs_review" | "confident";
+export type TurnAction = "choose_subtopic" | "answer" | "ask_follow_up" | "mark_confident";
 
-export type LearningRequest = {
-  action: LearningAction;
-  topic: string;
-  style: TeachingStyle;
-  level: LearnerLevel;
-  sessionId?: string;
-  answer?: string;
-  conceptId?: string;
-  sessionSummary?: string;
-};
-
-export type LessonChoice = {
-  id: string;
-  label: string;
-};
+export type LessonChoice = { id: string; label: string; detail: string };
 
 export type LessonUi =
+  | { type: "subtopic_selection"; prompt: string; choices: LessonChoice[] }
   | { type: "choice_question"; prompt: string; choices: LessonChoice[] }
   | { type: "free_response"; prompt: string; placeholder: string }
-  | { type: "lesson_complete"; summary: string; nextTopic?: string };
+  | { type: "lesson_complete"; summary: string };
 
-export type LearningResponse = {
+export type LearningTurn = {
   sessionId: string;
+  topic: string;
   teacherMessage: string;
-  conceptId: string;
   ui: LessonUi;
-  nextAction: "diagnose" | "teach" | "check_understanding" | "reteach_differently" | "complete_lesson";
-  progress: {
-    status: "exploring" | "learning" | "needs_review" | "confident";
-    evidenceLabel: string;
-  };
+  nextAction: LearningPhase;
+  progress: { status: ProgressStatus; confidence: number; evidenceLabel: string };
   sessionSummary: string;
-  meta: {
-    provider: string;
-    model: string;
-    prototype: boolean;
-  };
+  meta: { provider: string; model: string; prototype: false };
+};
+
+export type SessionCard = {
+  id: string;
+  topic: string;
+  subtopic: string | null;
+  progressStatus: ProgressStatus;
+  confidence: number;
+  lastActiveAt: string;
+};
+
+export type ProfileState = {
+  complete: boolean;
+  gradeLevel: GradeLevel | null;
+  preferredStyle: TeachingStyle | null;
 };
 
 export type LearningError = {
-  error: {
-    code: string;
-    message: string;
-    retryable: boolean;
-  };
+  error: { code: string; message: string; retryable: boolean };
 };
