@@ -12,6 +12,7 @@ create table if not exists public.student_profiles (
   grade_level smallint not null check (grade_level between 8 and 12),
   pilot_consent_at timestamptz not null,
   preferred_style text not null check (preferred_style in ('sports', 'practical', 'story', 'space', 'game-like', 'direct')),
+  preferred_format text not null default 'real_examples' check (preferred_format in ('visual_cards', 'real_examples', 'step_by_step', 'video_style')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -23,8 +24,9 @@ create table if not exists public.learning_sessions (
   selected_subtopic_id text,
   selected_subtopic_label text,
   style text not null check (style in ('sports', 'practical', 'story', 'space', 'game-like', 'direct')),
-  declared_level text not null check (declared_level in ('new', 'some_knowledge', 'test_me')),
-  phase text not null check (phase in ('choose_subtopic', 'diagnose', 'teach', 'check_understanding', 'complete')),
+  declared_level text not null check (declared_level in ('new', 'some_knowledge', 'test_me', 'revise')),
+  content_format text not null default 'real_examples' check (content_format in ('visual_cards', 'real_examples', 'step_by_step', 'video_style')),
+  phase text not null check (phase in ('choose_subtopic', 'diagnose', 'teach', 'check_understanding', 'choose_next', 'complete')),
   status text not null default 'active' check (status in ('active', 'paused', 'completed')),
   summary text not null default '',
   current_teacher_message text not null default '',

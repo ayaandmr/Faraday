@@ -1,10 +1,10 @@
 # Pilot learning data
 
-Run `supabase/migrations/202609300001_faraday_learning.sql` in the configured Supabase project before enabling the backend.
+Run migrations in filename order. Existing projects that already ran the first migration must also run `202609300002_saved_teaching_preferences.sql`.
 
 - `app_users`: Clerk user ID to internal UUID mapping.
-- `student_profiles`: grade, pilot consent time, and latest teaching style.
-- `learning_sessions`: durable topic, selected subtopic, phase, current card, compact summary, and progress snapshot.
+- `student_profiles`: grade, pilot consent time, preferred example style, and preferred answer format.
+- `learning_sessions`: durable topic, selected learning step, answer format, current teaching cards, compact summary, and progress snapshot.
 - `lesson_turns`: raw student/teacher content and card output; each row expires after 90 days.
 - `concept_progress`: evidence-derived confidence per active concept.
 - `student_memories`: harmless, high-confidence preferences, interests, goals, misconceptions, and successful strategies.

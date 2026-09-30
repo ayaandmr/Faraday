@@ -1,70 +1,96 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import type { GradeLevel, LearnerLevel, LearningError, LearningTurn, ProfileState, TeachingStyle, TurnAction } from "../lib/learning/contracts";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import type { GradeLevel, LearnerLevel, LearningError, LearningTurn, ProfileState, ResponseFormat, TeachingStyle, TurnAction } from "../lib/learning/contracts";
 
-const styleOptions: Array<{ value: TeachingStyle; label: string; detail: string }> = [
-  { value: "sports", label: "Sports", detail: "Use matches, moves, and teamwork" }, { value: "practical", label: "Practical", detail: "Use real-life examples" }, { value: "story", label: "Story", detail: "Turn ideas into a tale" },
-  { value: "space", label: "Space", detail: "Explore it like a mission" }, { value: "game-like", label: "Game-like", detail: "Make it a small challenge" }, { value: "direct", label: "Just explain", detail: "Keep it clear and simple" },
-];
-const levelOptions: Array<{ value: LearnerLevel; label: string }> = [{ value: "new", label: "I'm brand new" }, { value: "some_knowledge", label: "I know a little" }, { value: "test_me", label: "Test me first" }];
+const styleOptions: Array<{ value: TeachingStyle; label: string }> = [{ value: "practical", label: "Real life" }, { value: "sports", label: "Sports" }, { value: "story", label: "Stories" }, { value: "space", label: "Space" }, { value: "game-like", label: "Game-like" }, { value: "direct", label: "Direct" }];
+const formatOptions: Array<{ value: ResponseFormat; label: string; detail: string }> = [{ value: "visual_cards", label: "Visual cards", detail: "A concept map in small pieces" }, { value: "real_examples", label: "Examples", detail: "Every idea with a real example" }, { value: "step_by_step", label: "Step by step", detail: "Slow and ordered explanations" }, { value: "video_style", label: "Video-style", detail: "A scene-by-scene walkthrough" }];
+const levelOptions: Array<{ value: LearnerLevel; label: string; detail: string }> = [{ value: "new", label: "Brand new", detail: "Start from what the topic means" }, { value: "some_knowledge", label: "I know a little", detail: "Connect to what I may know" }, { value: "revise", label: "I am revising", detail: "Refresh the key ideas clearly" }];
 
-function SelectionButton({ active, disabled, children, onClick }: { active?: boolean; disabled?: boolean; children: React.ReactNode; onClick: () => void }) {
-  return <button type="button" disabled={disabled} onClick={onClick} className={`rounded-xl border px-3 py-3 text-left text-sm font-extrabold transition disabled:cursor-wait disabled:opacity-60 ${active ? "border-[#246946] bg-[#dff5e5] text-[#1d6a42] shadow-[0_2px_0_#8bcba0]" : "border-[#d9e3d4] bg-white text-[#486252] hover:-translate-y-0.5 hover:border-[#8fc7a1] hover:bg-[#f4fbf1]"}`}>{children}</button>;
+function Choice({ active, children, onClick, disabled }: { active?: boolean; children: React.ReactNode; onClick: () => void; disabled?: boolean }) {
+  return <button type="button" disabled={disabled} onClick={onClick} className={`rounded-2xl border p-4 text-left transition disabled:opacity-60 ${active ? "border-[#246946] bg-[#dff5e5] text-[#1d6a42] shadow-[0_3px_0_#8bcba0]" : "border-[#d9e3d4] bg-white text-[#486252] hover:-translate-y-0.5 hover:border-[#8fc7a1]"}`}>{children}</button>;
 }
 
-async function responsePayload(response: Response) {
-  const payload = await response.json() as LearningTurn | LearningError | ProfileState;
-  if (!response.ok || "error" in payload) throw new Error("error" in payload ? payload.error.message : "Faraday could not prepare the lesson.");
-  return payload;
+async function payload(response: Response) {
+  const data = await response.json() as LearningTurn | LearningError | ProfileState;
+  if (!response.ok || "error" in data) throw new Error("error" in data ? data.error.message : "Faraday could not continue.");
+  return data;
 }
 
 export function CoreLearningSession() {
-  const [topic, setTopic] = useState(""); const [setupOpen, setSetupOpen] = useState(false); const [style, setStyle] = useState<TeachingStyle>("sports"); const [level, setLevel] = useState<LearnerLevel>("some_knowledge");
-  const [gradeLevel, setGradeLevel] = useState<GradeLevel>(9); const [pilotConsent, setPilotConsent] = useState(false); const [onboardingReady, setOnboardingReady] = useState(false); const [profile, setProfile] = useState<ProfileState | null>(null); const [lesson, setLesson] = useState<LearningTurn | null>(null);
-  const [draft, setDraft] = useState(""); const [selectedChoice, setSelectedChoice] = useState(""); const [busy, setBusy] = useState(false); const [loadingResume, setLoadingResume] = useState(true); const [error, setError] = useState("");
+  const [profile, setProfile] = useState<ProfileState | null>(null);
+  const [topic, setTopic] = useState("");
+  const [setupOpen, setSetupOpen] = useState(false);
+  const [grade, setGrade] = useState<GradeLevel>(9);
+  const [style, setStyle] = useState<TeachingStyle>("practical");
+  const [format, setFormat] = useState<ResponseFormat>("real_examples");
+  const [level, setLevel] = useState<LearnerLevel>("new");
+  const [consent, setConsent] = useState(false);
+  const [lesson, setLesson] = useState<LearningTurn | null>(null);
+  const [draft, setDraft] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const responseRef = useRef<HTMLElement>(null);
 
   useEffect(() => { void (async () => {
     try {
-      const loadedProfile = await responsePayload(await fetch("/api/learning/profile", { cache: "no-store" })) as ProfileState;
-      setProfile(loadedProfile); if (loadedProfile.gradeLevel) setGradeLevel(loadedProfile.gradeLevel); if (loadedProfile.preferredStyle) setStyle(loadedProfile.preferredStyle);
+      const loaded = await payload(await fetch("/api/learning/profile", { cache: "no-store" })) as ProfileState;
+      setProfile(loaded); if (loaded.gradeLevel) setGrade(loaded.gradeLevel); if (loaded.preferredStyle) setStyle(loaded.preferredStyle); if (loaded.preferredFormat) setFormat(loaded.preferredFormat);
       const sessionId = new URLSearchParams(window.location.search).get("session");
-      if (sessionId) { const restored = await responsePayload(await fetch(`/api/learning/sessions/${encodeURIComponent(sessionId)}`, { cache: "no-store" })) as LearningTurn; setLesson(restored); setTopic(restored.topic); }
-    } catch (caught) { setError(caught instanceof Error ? caught.message : "Faraday could not load this learning space."); } finally { setLoadingResume(false); }
+      if (sessionId) { const restored = await payload(await fetch(`/api/learning/sessions/${encodeURIComponent(sessionId)}`, { cache: "no-store" })) as LearningTurn; setLesson(restored); setTopic(restored.topic); }
+    } catch (caught) { setError(caught instanceof Error ? caught.message : "Faraday could not open your learning space."); }
   })(); }, []);
 
-  function openSetup() { if (!topic.trim()) { setError("Enter a topic before starting."); return; } setError(""); setLesson(null); setDraft(""); setSelectedChoice(""); setOnboardingReady(Boolean(profile?.complete)); setSetupOpen(true); }
-  async function startSession() {
-    if (!topic.trim() || busy) return; if (!profile?.complete && !pilotConsent) { setError("Please accept the pilot notice before starting."); return; }
+  useEffect(() => {
+    if (!lesson) return;
+    const frame = requestAnimationFrame(() => responseRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    return () => cancelAnimationFrame(frame);
+  }, [lesson]);
+
+  function beginSetup() {
+    if (!topic.trim()) { setError("Tell Faraday what you want to learn first."); return; }
+    setError(""); setSetupOpen(true);
+  }
+
+  async function startLesson() {
+    if (busy || (!profile?.complete && !consent)) { if (!profile?.complete) setError("Please accept the pilot notice first."); return; }
     setBusy(true); setError("");
     try {
-      const created = await responsePayload(await fetch("/api/learning/sessions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ topic: topic.trim(), style, level, gradeLevel: profile?.complete ? undefined : gradeLevel, pilotConsent: profile?.complete ? undefined : pilotConsent }) })) as LearningTurn;
-      setLesson(created); setProfile({ complete: true, gradeLevel, preferredStyle: style }); setSetupOpen(false); window.history.replaceState(null, "", `/dashboard/learn?session=${encodeURIComponent(created.sessionId)}`);
-    } catch (caught) { setError(caught instanceof Error ? caught.message : "Faraday could not start this lesson."); } finally { setBusy(false); }
+      const created = await payload(await fetch("/api/learning/sessions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ topic: topic.trim(), style, format, level, gradeLevel: profile?.complete ? undefined : grade, pilotConsent: profile?.complete ? undefined : consent }) })) as LearningTurn;
+      setLesson(created); setSetupOpen(false); setProfile({ complete: true, gradeLevel: grade, preferredStyle: style, preferredFormat: format }); window.history.replaceState(null, "", `/dashboard/learn?session=${encodeURIComponent(created.sessionId)}`);
+    } catch (caught) { setError(caught instanceof Error ? caught.message : "Faraday could not build the lesson."); }
+    finally { setBusy(false); }
   }
+
   async function sendTurn(action: TurnAction, value?: string) {
-    if (!lesson || busy) return; setBusy(true); setError("");
+    if (!lesson || busy) return;
+    setBusy(true); setError("");
     try {
-      const next = await responsePayload(await fetch(`/api/learning/sessions/${encodeURIComponent(lesson.sessionId)}/turns`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(action === "ask_follow_up" ? { action, answer: value } : { action, choiceId: value }) })) as LearningTurn;
-      setLesson(next); setDraft(""); setSelectedChoice("");
-    } catch (caught) { setError(caught instanceof Error ? caught.message : "Faraday could not prepare the next step."); } finally { setBusy(false); }
+      const next = await payload(await fetch(`/api/learning/sessions/${encodeURIComponent(lesson.sessionId)}/turns`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(action === "ask_follow_up" ? { action, answer: value } : action === "choose_next" ? { action, choiceId: value } : { action }) })) as LearningTurn;
+      setLesson(next); setDraft("");
+    } catch (caught) { setError(caught instanceof Error ? caught.message : "Faraday could not continue the lesson."); }
+    finally { setBusy(false); }
   }
-  function askQuestion() { if (!draft.trim()) { setError("Write a short question for Faraday first."); return; } void sendTurn("ask_follow_up", draft.trim()); }
+
+  function ask() { if (!draft.trim()) { setError("Write your question first."); return; } void sendTurn("ask_follow_up", draft.trim()); }
+  function newTopic() { setLesson(null); setTopic(""); setSetupOpen(false); setError(""); window.history.replaceState(null, "", "/dashboard/learn"); }
 
   return <>
-    <p className="eyebrow">Adaptive learning session</p><h1>What are you curious about?</h1><p className="intro">Choose a topic, a style, and one tiny mission. Faraday keeps the thread for when you return.</p>
-    <section className="learning-card mt-7 rounded-[22px] border border-[#dfe7d7] bg-white p-5 min-[700px]:p-7"><label className="text-sm font-extrabold text-[#38564a]" htmlFor="core-topic">Your topic</label><div className="mt-3 flex rounded-2xl border border-[#d2dfc9] bg-[#f8fbf4] p-2 focus-within:ring-4 focus-within:ring-[#e2f4dd]"><input id="core-topic" value={topic} disabled={busy || Boolean(lesson)} onChange={(event) => { setTopic(event.target.value); setSetupOpen(false); }} onKeyDown={(event) => event.key === "Enter" && openSetup()} placeholder="Try: Why do planets stay in orbit?" className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm outline-none placeholder:text-[#91a092] disabled:opacity-60"/><button type="button" disabled={busy || Boolean(lesson)} onClick={openSetup} className="rounded-xl bg-[#246946] px-4 py-3 text-sm font-extrabold text-white shadow-[0_3px_0_#143d2b] disabled:cursor-wait disabled:opacity-60">Let&apos;s go →</button></div></section>
-    {loadingResume && <p className="mt-5 text-sm font-bold text-[#687d6d]">Opening your learning space…</p>}
-    {setupOpen && !profile?.complete && !onboardingReady && <section className="learning-card mt-5 rounded-[22px] border border-[#e6cf70] bg-[#fff5c6] p-5 min-[700px]:p-7"><p className="eyebrow text-[#80660b]">A quick pilot check-in</p><h2 className="mt-2 text-[25px]">Which grade are you in?</h2><p className="mt-2 text-sm text-[#75652b]">Faraday uses this only to choose an age-appropriate starting point.</p><div className="mt-4 grid grid-cols-5 gap-2">{([8, 9, 10, 11, 12] as GradeLevel[]).map((grade) => <SelectionButton key={grade} active={gradeLevel === grade} onClick={() => setGradeLevel(grade)}>Grade {grade}</SelectionButton>)}</div><label className="mt-5 flex cursor-pointer gap-3 rounded-xl border border-[#dfc464] bg-white/70 p-4 text-sm text-[#705f25]"><input checked={pilotConsent} onChange={(event) => setPilotConsent(event.target.checked)} type="checkbox" className="mt-0.5 size-4 accent-[#246946]"/><span><strong>I&apos;m 13 or older.</strong> I understand this pilot stores my learning progress, preferences, and lesson summaries. Raw lesson messages are removed after 90 days, and I can delete my learning data in Settings.</span></label><button type="button" disabled={!pilotConsent} onClick={() => setOnboardingReady(true)} className="mt-5 rounded-xl bg-[#246946] px-4 py-3 text-sm font-extrabold text-white disabled:cursor-not-allowed disabled:opacity-50">Continue →</button></section>}
-    {setupOpen && (profile?.complete || onboardingReady) && <section className="learning-card mt-5 rounded-[22px] border border-[#e6cf70] bg-[#fff5c6] p-5 min-[700px]:p-7"><p className="eyebrow text-[#80660b]">Tiny mission: {topic}</p><h2 className="mt-2 text-[25px]">How should we explore it?</h2><p className="mt-2 text-sm text-[#75652b]">Pick what sounds fun. You can change your mind next time.</p><div className="mt-4 grid grid-cols-2 gap-2 min-[560px]:grid-cols-3">{styleOptions.map((option) => <SelectionButton key={option.value} active={style === option.value} onClick={() => setStyle(option.value)}><span className="block">{option.label}</span><span className="mt-1 block text-[11px] font-medium opacity-80">{option.detail}</span></SelectionButton>)}</div><p className="mt-5 text-sm font-extrabold text-[#705f25]">Where should we begin?</p><div className="mt-2 grid gap-2 min-[560px]:grid-cols-3">{levelOptions.map((option) => <SelectionButton key={option.value} active={level === option.value} onClick={() => setLevel(option.value)}>{option.label}</SelectionButton>)}</div><button type="button" disabled={busy} onClick={() => void startSession()} className="mt-5 rounded-xl bg-[#246946] px-4 py-3 text-sm font-extrabold text-white shadow-[0_3px_0_#143d2b] disabled:cursor-wait disabled:opacity-60">{busy ? "Preparing…" : "Build my lesson →"}</button></section>}
+    <p className="eyebrow">Your personal teacher</p><h1>What do you want to understand?</h1><p className="intro">Ask normally. Faraday starts with the basics, explains one idea at a time, and remembers how you like to learn.</p>
+
+    {!lesson && <section className="learning-card mt-7 rounded-[24px] border border-[#dfe7d7] bg-white p-5 min-[700px]:p-7"><label htmlFor="topic" className="text-sm font-extrabold text-[#38564a]">Ask Faraday</label><div className="mt-3 flex rounded-2xl border border-[#d2dfc9] bg-[#f8fbf4] p-2 focus-within:ring-4 focus-within:ring-[#e2f4dd]"><input id="topic" value={topic} onChange={(event) => { setTopic(event.target.value); setSetupOpen(false); }} onKeyDown={(event) => event.key === "Enter" && beginSetup()} placeholder="Example: What is quantum mechanics?" className="min-w-0 flex-1 bg-transparent px-3 py-3 text-base outline-none placeholder:text-[#91a092]"/><button type="button" onClick={beginSetup} className="rounded-xl bg-[#246946] px-5 py-3 text-sm font-extrabold text-white shadow-[0_3px_0_#143d2b]">Send →</button></div></section>}
+
+    {setupOpen && <div className="mt-6 space-y-4"><div className="ml-auto max-w-[760px] rounded-[22px_22px_6px_22px] border border-[#c9d9c7] bg-white p-5"><p className="text-[10px] font-extrabold uppercase tracking-wider text-[#6d8173]">You</p><p className="mt-2 text-lg font-bold">{topic}</p></div><section className="learning-card max-w-[900px] rounded-[6px_24px_24px_24px] border border-[#e6cf70] bg-[#fff5c6] p-5 min-[700px]:p-7"><p className="eyebrow text-[#80660b]">Faraday AI</p><h2 className="mt-2 text-[27px]">Got it. One quick check before I teach.</h2><p className="mt-2 text-sm text-[#75652b]">How much do you know about this topic?</p><div className="mt-4 grid gap-3 min-[650px]:grid-cols-3">{levelOptions.map((item) => <Choice key={item.value} active={level === item.value} onClick={() => setLevel(item.value)}><strong className="block">{item.label}</strong><span className="mt-1 block text-xs font-medium">{item.detail}</span></Choice>)}</div>
+      {!profile?.complete && <div className="mt-6 border-t border-[#dfc970] pt-5"><p className="text-sm font-extrabold text-[#705f25]">Set this once — Faraday remembers it.</p><p className="mt-4 text-xs font-extrabold uppercase tracking-wide text-[#80660b]">Your grade</p><div className="mt-2 grid grid-cols-5 gap-2">{([8, 9, 10, 11, 12] as GradeLevel[]).map((item) => <Choice key={item} active={grade === item} onClick={() => setGrade(item)}>Grade {item}</Choice>)}</div><p className="mt-4 text-xs font-extrabold uppercase tracking-wide text-[#80660b]">Examples you enjoy</p><div className="mt-2 grid grid-cols-2 gap-2 min-[650px]:grid-cols-3">{styleOptions.map((item) => <Choice key={item.value} active={style === item.value} onClick={() => setStyle(item.value)}>{item.label}</Choice>)}</div><p className="mt-4 text-xs font-extrabold uppercase tracking-wide text-[#80660b]">How should answers look?</p><div className="mt-2 grid gap-2 min-[650px]:grid-cols-2">{formatOptions.map((item) => <Choice key={item.value} active={format === item.value} onClick={() => setFormat(item.value)}><strong className="block">{item.label}</strong><span className="mt-1 block text-xs font-medium">{item.detail}</span></Choice>)}</div><label className="mt-4 flex gap-3 rounded-xl bg-white/75 p-4 text-sm text-[#705f25]"><input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} className="mt-0.5 size-4 accent-[#246946]"/><span><strong>I&apos;m 13 or older.</strong> Save my learning progress and preferences. Raw lesson messages are removed after 90 days.</span></label></div>}
+      {profile?.complete && <p className="mt-5 rounded-xl bg-white/70 px-4 py-3 text-sm text-[#705f25]">Using your saved learning style. You can change it anytime in <Link href="/dashboard/memory" className="font-extrabold underline">Memory & preferences</Link>.</p>}
+      <button type="button" disabled={busy || (!profile?.complete && !consent)} onClick={() => void startLesson()} className="mt-5 rounded-xl bg-[#246946] px-5 py-3 text-sm font-extrabold text-white shadow-[0_3px_0_#143d2b] disabled:cursor-wait disabled:opacity-50">{busy ? "Building clear cards…" : "Teach me from the beginning →"}</button></section></div>}
+
     {error && <p role="alert" className="mt-5 rounded-xl border border-[#e6b895] bg-[#fff0d3] px-4 py-3 text-sm font-bold text-[#72551e]">{error}</p>}
-    {lesson && <section className="learning-card mt-5 rounded-[22px] border border-[#dfe7d7] bg-white p-5 min-[700px]:p-7"><div className="flex flex-wrap items-center justify-between gap-2"><p className="eyebrow">Faraday&apos;s next step</p><span className="rounded-full bg-[#eff8ee] px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-[#315b40]">Saved learning session</span></div><div className="mt-4 rounded-2xl bg-[#eff8ee] p-4 text-sm leading-relaxed text-[#315b40]"><strong>Faraday:</strong> {lesson.teacherMessage}</div>
-      {(lesson.ui.type === "subtopic_selection" || lesson.ui.type === "choice_question") && <><h2 className="mt-5 text-[24px]">{lesson.ui.prompt}</h2><div className="mt-4 grid gap-2">{lesson.ui.choices.map((choice) => <SelectionButton key={choice.id} active={selectedChoice === choice.id} disabled={busy} onClick={() => { setSelectedChoice(choice.id); void sendTurn(lesson.ui.type === "subtopic_selection" ? "choose_subtopic" : "answer", choice.id); }}><span className="block">{choice.label}</span><span className="mt-1 block text-xs font-medium opacity-80">{choice.detail}</span></SelectionButton>)}</div></>}
-      {lesson.ui.type === "free_response" && <><h2 className="mt-5 text-[24px]">{lesson.ui.prompt}</h2><p className="mt-2 text-sm text-[#687d6d]">{lesson.ui.placeholder}</p></>}
-      {lesson.ui.type === "lesson_complete" && <div className="mt-5 rounded-xl bg-[#dff5e5] p-4 text-sm text-[#245b3a]"><strong>Mission complete.</strong> {lesson.ui.summary}</div>}
-      {lesson.progress.status === "confident" && lesson.ui.type !== "lesson_complete" && <button type="button" disabled={busy} onClick={() => void sendTurn("mark_confident")} className="mt-5 rounded-xl border border-[#8fc7a1] bg-[#eff8ee] px-4 py-3 text-sm font-extrabold text-[#246946]">I got it — finish this mission →</button>}
-      {lesson.ui.type !== "lesson_complete" && <div className="mt-5 border-t border-[#e3ebe0] pt-4"><label className="text-sm font-extrabold text-[#38564a]" htmlFor="core-question">Ask in your own words</label><div className="mt-2 flex rounded-xl border border-[#d6e1d0] bg-[#f8fbf4] p-1.5"><input id="core-question" value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => event.key === "Enter" && askQuestion()} placeholder="Explain that more simply…" className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm outline-none"/><button type="button" disabled={busy} onClick={askQuestion} className="rounded-lg bg-[#246946] px-3 text-sm font-extrabold text-white disabled:cursor-wait disabled:opacity-60">{busy ? "Thinking…" : "Ask →"}</button></div></div>}
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-[#687d6d]"><span>{lesson.progress.evidenceLabel}</span><span>{lesson.meta.provider} · {lesson.meta.model}</span></div>
-    </section>}
+
+    {lesson && <section ref={responseRef} className="scroll-mt-6 mt-7"><div className="ml-auto max-w-[760px] rounded-[22px_22px_6px_22px] border border-[#c9d9c7] bg-white p-5"><p className="text-[10px] font-extrabold uppercase tracking-wider text-[#6d8173]">You</p><p className="mt-2 text-lg font-bold">{lesson.studentMessage}</p></div><div className="learning-card mt-4 rounded-[6px_28px_28px_28px] border-2 border-[#b9d8c1] bg-white p-5 shadow-[0_10px_35px_rgba(28,65,45,.10)] min-[700px]:p-8"><div className="flex flex-wrap items-center justify-between gap-3"><p className="eyebrow">Faraday AI</p><span className="rounded-full bg-[#dff5e5] px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-[#246946]">Personalized lesson</span></div><p className="mt-4 max-w-[850px] text-[clamp(18px,2.2vw,24px)] font-bold leading-relaxed text-[#244c38]">{lesson.teacherMessage}</p>
+      {lesson.ui.type === "teaching_cards" && <><h2 className="mt-8 text-[clamp(27px,4vw,39px)]">{lesson.ui.title}</h2><div className="mt-5 grid gap-4">{lesson.ui.cards.map((card, index) => <article key={card.id} className="rounded-[22px] border border-[#dbe6d8] bg-[#f8fbf4] p-5 min-[700px]:p-6"><div className="flex items-start gap-4"><span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#246946] text-sm font-extrabold text-white">{index + 1}</span><div><p className="text-[10px] font-extrabold uppercase tracking-wider text-[#6d8173]">{card.kind}</p><h3 className="mt-1 text-[22px] font-bold tracking-[-.8px]">{card.title}</h3><p className="mt-3 text-base leading-7 text-[#38564a]">{card.body}</p>{card.example && <div className="mt-4 rounded-xl border border-[#e6cf70] bg-[#fff5c6] p-4 text-sm leading-6 text-[#705f25]"><strong>Easy example:</strong> {card.example}</div>}</div></div></article>)}</div><div className="mt-6 grid gap-3 min-[560px]:grid-cols-2"><button type="button" disabled={busy} onClick={() => void sendTurn("understand")} className="rounded-2xl bg-[#246946] px-5 py-4 text-base font-extrabold text-white shadow-[0_4px_0_#143d2b] disabled:opacity-60">✓ I understand</button><button type="button" disabled={busy} onClick={() => void sendTurn("confused")} className="rounded-2xl border-2 border-[#e0be44] bg-[#fff5c6] px-5 py-4 text-base font-extrabold text-[#705604] disabled:opacity-60">I&apos;m confused — make it easier</button></div></>}
+      {lesson.ui.type === "next_topics" && <><h2 className="mt-7 text-[28px]">{lesson.ui.prompt}</h2><p className="mt-2 text-sm text-[#687d6d]">The easiest next step is first. Pick any card.</p><div className="mt-4 grid gap-3 min-[650px]:grid-cols-2">{lesson.ui.choices.map((choice, index) => <Choice key={choice.id} disabled={busy} onClick={() => void sendTurn("choose_next", choice.id)}><span className="text-[10px] font-extrabold uppercase tracking-wide text-[#246946]">Step {index + 1}</span><strong className="mt-1 block text-lg">{choice.label}</strong><span className="mt-1 block text-sm font-medium">{choice.detail}</span></Choice>)}</div></>}
+      <div className="mt-7 border-t border-[#e3ebe0] pt-5"><label htmlFor="follow-up" className="text-sm font-extrabold text-[#38564a]">Still wondering something? Ask here.</label><div className="mt-2 flex rounded-2xl border border-[#d6e1d0] bg-[#f8fbf4] p-2 focus-within:ring-4 focus-within:ring-[#e2f4dd]"><input id="follow-up" value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => event.key === "Enter" && ask()} placeholder="Example: Can you explain card 2 with football?" className="min-w-0 flex-1 bg-transparent px-3 py-3 text-sm outline-none"/><button type="button" disabled={busy} onClick={ask} className="rounded-xl bg-[#246946] px-4 text-sm font-extrabold text-white disabled:opacity-60">{busy ? "Thinking…" : "Ask →"}</button></div></div><div className="mt-5 flex flex-wrap items-center justify-between gap-3 text-xs text-[#687d6d]"><span>{lesson.progress.evidenceLabel}</span><button type="button" onClick={newTopic} className="font-extrabold text-[#246946]">Start a different topic</button></div></div></section>}
   </>;
 }

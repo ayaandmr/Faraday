@@ -1,11 +1,11 @@
-import type { GradeLevel, LearnerLevel, LessonUi, LearningPhase, ProfileState, ProgressStatus, SessionCard, TeachingStyle } from "../../learning/contracts";
+import type { GradeLevel, LearnerLevel, LessonUi, LearningPhase, ProfileState, ProgressStatus, ResponseFormat, SessionCard, StudentMemory, TeachingStyle } from "../../learning/contracts";
 import type { EvidenceKind, MemoryCandidate, MemoryContext, RecentTurn } from "./providers/teacher-provider";
 import { getSupabaseAdmin, isSupabaseConfigured } from "../supabase";
 
 type DbUser = { id: string; clerk_user_id: string };
-type DbProfile = { grade_level: number; preferred_style: TeachingStyle; pilot_consent_at: string };
+type DbProfile = { grade_level: number; preferred_style: TeachingStyle; preferred_format: ResponseFormat; pilot_consent_at: string };
 export type DbSession = {
-  id: string; user_id: string; topic: string; selected_subtopic_id: string | null; selected_subtopic_label: string | null; style: TeachingStyle; declared_level: LearnerLevel;
+  id: string; user_id: string; topic: string; selected_subtopic_id: string | null; selected_subtopic_label: string | null; style: TeachingStyle; content_format: ResponseFormat; declared_level: LearnerLevel;
   phase: LearningPhase; status: "active" | "paused" | "completed"; summary: string; current_teacher_message: string; current_ui: LessonUi; progress_status: ProgressStatus; progress_confidence: number; model_id: string; last_active_at: string;
 };
 
@@ -40,37 +40,37 @@ export function learningDatabaseConfigured() {
 
 export async function getProfileState(clerkUserId: string): Promise<ProfileState> {
   const user = await existingUser(clerkUserId);
-  if (!user) return { complete: false, gradeLevel: null, preferredStyle: null };
+  if (!user) return { complete: false, gradeLevel: null, preferredStyle: null, preferredFormat: null };
   const db = getSupabaseAdmin();
-  const profile = await db.from("student_profiles").select("grade_level, preferred_style, pilot_consent_at").eq("user_id", user.id).maybeSingle();
+  const profile = await db.from("student_profiles").select("grade_level, preferred_style, preferred_format, pilot_consent_at").eq("user_id", user.id).maybeSingle();
   databaseError(profile.error);
-  if (!profile.data) return { complete: false, gradeLevel: null, preferredStyle: null };
+  if (!profile.data) return { complete: false, gradeLevel: null, preferredStyle: null, preferredFormat: null };
   const data = profile.data as DbProfile;
-  return { complete: true, gradeLevel: data.grade_level as GradeLevel, preferredStyle: data.preferred_style };
+  return { complete: true, gradeLevel: data.grade_level as GradeLevel, preferredStyle: data.preferred_style, preferredFormat: data.preferred_format ?? "real_examples" };
 }
 
-export async function ensureProfile(clerkUserId: string, gradeLevel: GradeLevel | undefined, pilotConsent: boolean | undefined, preferredStyle: TeachingStyle) {
+export async function ensureProfile(clerkUserId: string, gradeLevel: GradeLevel | undefined, pilotConsent: boolean | undefined, preferredStyle: TeachingStyle, preferredFormat: ResponseFormat) {
   const user = await userFor(clerkUserId);
   const db = getSupabaseAdmin();
-  const current = await db.from("student_profiles").select("grade_level, preferred_style, pilot_consent_at").eq("user_id", user.id).maybeSingle();
+  const current = await db.from("student_profiles").select("grade_level, preferred_style, preferred_format, pilot_consent_at").eq("user_id", user.id).maybeSingle();
   databaseError(current.error);
   if (!current.data) {
     if (!gradeLevel || !pilotConsent) throw new Error("PROFILE_REQUIRED");
-    const created = await db.from("student_profiles").insert({ user_id: user.id, grade_level: gradeLevel, preferred_style: preferredStyle, pilot_consent_at: new Date().toISOString() });
+    const created = await db.from("student_profiles").insert({ user_id: user.id, grade_level: gradeLevel, preferred_style: preferredStyle, preferred_format: preferredFormat, pilot_consent_at: new Date().toISOString() });
     databaseError(created.error);
-    return { user, profile: { grade_level: gradeLevel, preferred_style: preferredStyle } };
+    return { user, profile: { grade_level: gradeLevel, preferred_style: preferredStyle, preferred_format: preferredFormat } };
   }
   const profile = current.data as DbProfile;
-  if (profile.preferred_style !== preferredStyle) {
-    const updated = await db.from("student_profiles").update({ preferred_style: preferredStyle, updated_at: new Date().toISOString() }).eq("user_id", user.id);
+  if (profile.preferred_style !== preferredStyle || profile.preferred_format !== preferredFormat) {
+    const updated = await db.from("student_profiles").update({ preferred_style: preferredStyle, preferred_format: preferredFormat, updated_at: new Date().toISOString() }).eq("user_id", user.id);
     databaseError(updated.error);
   }
   return { user, profile };
 }
 
-export async function createSession(input: { userId: string; topic: string; style: TeachingStyle; level: LearnerLevel; summary: string; teacherMessage: string; ui: LessonUi; modelId: string }) {
+export async function createSession(input: { userId: string; topic: string; style: TeachingStyle; format: ResponseFormat; level: LearnerLevel; summary: string; teacherMessage: string; ui: LessonUi; modelId: string }) {
   const db = getSupabaseAdmin();
-  const result = await db.from("learning_sessions").insert({ user_id: input.userId, topic: input.topic, style: input.style, declared_level: input.level, phase: "choose_subtopic", summary: input.summary, current_teacher_message: input.teacherMessage, current_ui: input.ui, model_id: input.modelId }).select("*").single();
+  const result = await db.from("learning_sessions").insert({ user_id: input.userId, topic: input.topic, style: input.style, content_format: input.format, declared_level: input.level, phase: "teach", summary: input.summary, current_teacher_message: input.teacherMessage, current_ui: input.ui, model_id: input.modelId, selected_subtopic_id: "foundations", selected_subtopic_label: `${input.topic} basics` }).select("*").single();
   databaseError(result.error);
   return result.data as DbSession;
 }
@@ -117,11 +117,11 @@ export async function countRecentTurns(userId: string) {
 }
 
 export function calculateProgress(confidenceBefore: number, evidence: EvidenceKind, action: string) {
-  const delta: Record<EvidenceKind, number> = { correct: 22, partial: 10, incorrect: -8, uncertain: -4, none: 0 };
+  const delta: Record<EvidenceKind, number> = { understood: 18, confused: -4, engaged: 5, none: 0 };
   const confidence = Math.max(0, Math.min(100, confidenceBefore + delta[evidence]));
-  const correctChecks = (evidence === "correct" ? 1 : 0);
-  let status: ProgressStatus = confidence >= 80 ? "confident" : confidence >= 45 ? "learning" : evidence === "incorrect" || evidence === "uncertain" ? "needs_review" : "exploring";
-  if (action === "choose_subtopic") status = "exploring";
+  const correctChecks = evidence === "understood" ? 1 : 0;
+  let status: ProgressStatus = confidence >= 80 ? "confident" : confidence >= 35 ? "learning" : evidence === "confused" ? "needs_review" : "exploring";
+  if (action === "choose_next") status = "learning";
   return { confidence, status, correctChecks };
 }
 
@@ -130,7 +130,7 @@ export async function saveTurn(input: { session: DbSession; action: string; stud
   const update = calculateProgress(input.session.progress_confidence, input.evidence, input.action);
   const status = input.complete ? "completed" : "active";
   const sessionUpdate = await db.from("learning_sessions").update({
-    selected_subtopic_id: input.action === "choose_subtopic" ? (input.ui.type === "choice_question" ? input.session.selected_subtopic_id : input.session.selected_subtopic_id) : input.session.selected_subtopic_id,
+    selected_subtopic_id: input.session.selected_subtopic_id,
     phase: input.phase, status, summary: input.summary, current_teacher_message: input.teacherMessage, current_ui: input.ui, progress_status: update.status, progress_confidence: update.confidence, model_id: input.modelId, last_active_at: new Date().toISOString(), completed_at: input.complete ? new Date().toISOString() : null,
   }).eq("id", input.session.id).eq("user_id", input.session.user_id).select("*").single();
   databaseError(sessionUpdate.error);
@@ -153,9 +153,35 @@ export async function saveTurn(input: { session: DbSession; action: string; stud
 
 export async function selectSubtopic(session: DbSession, choice: { id: string; label: string }) {
   const db = getSupabaseAdmin();
-  const result = await db.from("learning_sessions").update({ selected_subtopic_id: choice.id, selected_subtopic_label: choice.label, phase: "diagnose", last_active_at: new Date().toISOString() }).eq("id", session.id).eq("user_id", session.user_id).select("*").single();
+  const result = await db.from("learning_sessions").update({ selected_subtopic_id: choice.id, selected_subtopic_label: choice.label, phase: "teach", last_active_at: new Date().toISOString() }).eq("id", session.id).eq("user_id", session.user_id).select("*").single();
   databaseError(result.error);
   return result.data as DbSession;
+}
+
+export async function updateProfilePreferences(clerkUserId: string, style: TeachingStyle, format: ResponseFormat) {
+  const user = await existingUser(clerkUserId);
+  if (!user) throw new Error("PROFILE_REQUIRED");
+  const db = getSupabaseAdmin();
+  const result = await db.from("student_profiles").update({ preferred_style: style, preferred_format: format, updated_at: new Date().toISOString() }).eq("user_id", user.id);
+  databaseError(result.error);
+  return getProfileState(clerkUserId);
+}
+
+export async function listStudentMemories(clerkUserId: string): Promise<StudentMemory[]> {
+  const user = await existingUser(clerkUserId);
+  if (!user) return [];
+  const db = getSupabaseAdmin();
+  const result = await db.from("student_memories").select("id, type, content, confidence, created_at").eq("user_id", user.id).order("created_at", { ascending: false });
+  databaseError(result.error);
+  return (result.data ?? []).map((row) => ({ id: row.id, type: row.type, content: row.content, confidence: Number(row.confidence), createdAt: row.created_at })) as StudentMemory[];
+}
+
+export async function deleteStudentMemory(clerkUserId: string, memoryId: string) {
+  const user = await existingUser(clerkUserId);
+  if (!user) return;
+  const db = getSupabaseAdmin();
+  const result = await db.from("student_memories").delete().eq("id", memoryId).eq("user_id", user.id);
+  databaseError(result.error);
 }
 
 export async function deleteStudentLearningData(clerkUserId: string) {

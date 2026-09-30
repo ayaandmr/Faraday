@@ -18,7 +18,7 @@ SUPABASE_SECRET_KEY=
 CRON_SECRET=
 ```
 
-Run `supabase/migrations/202609300001_faraday_learning.sql` in the Supabase SQL Editor before starting a real lesson. Do not commit `.env.local` or any secret.
+Run every SQL file under `supabase/migrations/` in filename order in the Supabase SQL Editor before starting a real lesson. If the first migration was already applied, run only the newer migrations. Do not commit `.env.local` or any secret.
 
 ```powershell
 npm.cmd run test

@@ -4,12 +4,15 @@ All endpoints require a Clerk session. User identity is always derived server-si
 
 | Endpoint | Purpose |
 | --- | --- |
-| `GET /api/learning/profile` | Get first-use onboarding state. |
+| `GET /api/learning/profile` | Get first-use onboarding and saved teaching preferences. |
+| `PATCH /api/learning/profile` | Change the saved teaching style and answer format. |
 | `DELETE /api/learning/profile` | Delete a student's Faraday learning data, not their Clerk account. |
 | `POST /api/learning/sessions` | Create a session and return AI-generated subtopic cards. First use requires `gradeLevel` and `pilotConsent: true`. |
 | `GET /api/learning/sessions` | Return compact active-session cards for My Learning. |
 | `GET /api/learning/sessions/:sessionId` | Restore the current card for an owned session. |
-| `POST /api/learning/sessions/:sessionId/turns` | Submit `choose_subtopic`, `answer`, `ask_follow_up`, or `mark_confident`. |
+| `POST /api/learning/sessions/:sessionId/turns` | Submit `understand`, `confused`, `ask_follow_up`, or `choose_next`. |
+| `GET /api/learning/memories` | Read real saved learning memories. |
+| `DELETE /api/learning/memories/:memoryId` | Remove one saved memory. |
 
 All learning endpoints return JSON and use this safe error shape:
 

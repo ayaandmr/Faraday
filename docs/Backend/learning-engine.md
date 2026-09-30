@@ -88,15 +88,13 @@ Each memory stores provenance, confidence, creation time, last-use time, and whe
 ```mermaid
 stateDiagram-v2
     [*] --> TopicSetup
-    TopicSetup --> Diagnose
-    Diagnose --> Teach
-    Teach --> Check
-    Check --> Teach: unclear or incorrect
-    Check --> Practice: partially understood
-    Check --> Recap: sufficient evidence
-    Practice --> Check
-    Recap --> Complete
-    Complete --> [*]
+    TopicSetup --> TeachBasics
+    TeachBasics --> Reteach: confused
+    Reteach --> TeachBasics
+    TeachBasics --> ChooseNext: understands
+    ChooseNext --> TeachNext
+    TeachNext --> Reteach: confused
+    TeachNext --> ChooseNext: understands
 ```
 
 ## Structured model result
@@ -105,20 +103,16 @@ The model response should conform to a server-validated schema:
 
 ```json
 {
-  "teacherMessage": "Let's use a cricket-ball example.",
-  "ui": {
-    "type": "choice_question",
-    "prompt": "What keeps the ball moving forward?",
-    "choices": [
-      { "id": "a", "label": "Its existing motion" },
-      { "id": "b", "label": "A constant forward force" },
-      { "id": "unsure", "label": "I'm not sure yet" }
-    ]
-  },
-  "conceptId": "orbital-motion",
-  "recommendedAction": "check_understanding",
-  "memoryCandidates": [],
-  "evidenceCandidates": []
+  "teacherMessage": "Let's start with the simplest idea.",
+  "lessonTitle": "What motion means",
+  "cards": [
+    { "id": "motion", "title": "Motion is movement", "body": "An object is in motion when its position changes.", "example": "A rolling football moves across the field.", "kind": "concept" }
+  ],
+  "nextTopics": [
+    { "id": "speed", "label": "Speed", "detail": "How fast something moves" }
+  ],
+  "summary": "The learner started with the meaning of motion.",
+  "memoryCandidates": []
 }
 ```
 

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import type { ProfileState, ResponseFormat, StudentMemory, TeachingStyle } from "../lib/learning/contracts";
 
 const styles = ["Sports", "Practical", "Story", "Space", "Game-like", "Just explain"];
 
@@ -93,25 +94,39 @@ export function TestPrototype() {
   </>;
 }
 
-const initialMemories = [
-  ["Learning style", "You usually enjoy practical and sports-based examples."],
-  ["Growing strength", "Basic gravity and mass versus weight are clicking."],
-  ["A thread to revisit", "Orbits feel easier after a visual or real-life example."],
-  ["Your interests", "Space, history stories, and football examples make learning more fun."],
-];
-
 export function MemoryPrototype() {
-  const [memories, setMemories] = useState(initialMemories);
-  const [editing, setEditing] = useState<number | null>(null);
-  const [draft, setDraft] = useState("");
+  const [memories, setMemories] = useState<StudentMemory[]>([]);
+  const [profile, setProfile] = useState<ProfileState | null>(null);
+  const [style, setStyle] = useState<TeachingStyle>("practical");
+  const [format, setFormat] = useState<ResponseFormat>("real_examples");
+  const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
-  function edit(index: number) { setEditing(index); setDraft(memories[index][1]); setNotice(""); }
-  function save() { if (editing === null || !draft.trim()) return; setMemories((items) => items.map((item, index) => index === editing ? [item[0], draft.trim()] : item)); setEditing(null); setNotice("Saved in this prototype session. Real memory storage comes later."); }
+  useEffect(() => { void (async () => {
+    try {
+      const [profileResponse, memoryResponse] = await Promise.all([fetch("/api/learning/profile", { cache: "no-store" }), fetch("/api/learning/memories", { cache: "no-store" })]);
+      if (!profileResponse.ok || !memoryResponse.ok) throw new Error();
+      const loadedProfile = await profileResponse.json() as ProfileState;
+      const loadedMemories = await memoryResponse.json() as { memories: StudentMemory[] };
+      setProfile(loadedProfile); setStyle(loadedProfile.preferredStyle ?? "practical"); setFormat(loadedProfile.preferredFormat ?? "real_examples"); setMemories(loadedMemories.memories);
+    } catch { setNotice("Faraday could not load your saved preferences yet."); }
+  })(); }, []);
+  async function savePreferences() {
+    setBusy(true); setNotice("");
+    try { const response = await fetch("/api/learning/profile", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ style, format }) }); if (!response.ok) throw new Error(); setNotice("Saved. New lessons will use these choices automatically."); }
+    catch { setNotice("Faraday could not save those preferences."); } finally { setBusy(false); }
+  }
+  async function removeMemory(id: string) {
+    setBusy(true); setNotice("");
+    try { const response = await fetch(`/api/learning/memories/${encodeURIComponent(id)}`, { method: "DELETE" }); if (!response.ok) throw new Error(); setMemories((items) => items.filter((item) => item.id !== id)); setNotice("Memory removed."); }
+    catch { setNotice("Faraday could not remove that memory."); } finally { setBusy(false); }
+  }
+  const styles: Array<[TeachingStyle, string]> = [["practical", "Real life"], ["sports", "Sports"], ["story", "Stories"], ["space", "Space"], ["game-like", "Game-like"], ["direct", "Direct"]];
+  const formats: Array<[ResponseFormat, string]> = [["visual_cards", "Visual cards"], ["real_examples", "Real examples"], ["step_by_step", "Step by step"], ["video_style", "Video-style"]];
   return <>
-    <p className="eyebrow">Your teacher&apos;s notebook</p><h1>What Faraday remembers.</h1><p className="intro">These notes help lessons feel personal. You are always in control of them.</p>
-    <div className="mt-7 space-y-3">{memories.map(([title, detail], index) => <Panel key={title} className="flex flex-col gap-3 p-5 min-[600px]:flex-row min-[600px]:items-center"><div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#dff5e5] font-bold text-[#246946]">OK</div><div className="min-w-0 flex-1"><h2 className="text-lg">{title}</h2><p className="mt-1 text-sm text-[#66796b]">{detail}</p></div><button type="button" onClick={() => edit(index)} className="rounded-lg px-3 py-2 text-sm font-extrabold text-[#246946] hover:bg-[#eaf5ea]">Edit</button></Panel>)}</div>
+    <p className="eyebrow">Your teacher&apos;s notebook</p><h1>Memory & preferences.</h1><p className="intro">Set how Faraday should teach once. Every new topic will use it automatically.</p>
+    <Panel className="mt-7"><p className="eyebrow">Teaching style</p><h2 className="mt-1 text-[24px]">What kind of examples click for you?</h2><div className="mt-4 grid grid-cols-2 gap-2 min-[650px]:grid-cols-3">{styles.map(([value, label]) => <Option key={value} active={style === value} onClick={() => setStyle(value)}>{label}</Option>)}</div><p className="mt-6 text-sm font-extrabold">How should answers look?</p><div className="mt-3 grid grid-cols-2 gap-2">{formats.map(([value, label]) => <Option key={value} active={format === value} onClick={() => setFormat(value)}>{label}</Option>)}</div><button type="button" disabled={busy || !profile?.complete} onClick={() => void savePreferences()} className="mt-6 rounded-xl bg-[#246946] px-4 py-3 text-sm font-extrabold text-white disabled:opacity-50">{busy ? "Saving…" : "Save teaching preferences"}</button></Panel>
+    <div className="mt-7 space-y-3">{memories.length ? memories.map((memory) => <Panel key={memory.id} className="flex flex-col gap-3 p-5 min-[600px]:flex-row min-[600px]:items-center"><div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#dff5e5] font-bold text-[#246946]">✓</div><div className="min-w-0 flex-1"><p className="text-[10px] font-extrabold uppercase tracking-wide text-[#6d8173]">{memory.type.replace("_", " ")}</p><p className="mt-1 text-sm text-[#66796b]">{memory.content}</p></div><button type="button" disabled={busy} onClick={() => void removeMemory(memory.id)} className="rounded-lg px-3 py-2 text-sm font-extrabold text-[#873b27] hover:bg-[#fff0d3]">Remove</button></Panel>) : <Panel><p className="text-sm text-[#66796b]">No extra memories yet. Faraday will save only useful learning preferences, interests, or confusions that appear during lessons.</p></Panel>}</div>
     {notice && <p className="mt-5 rounded-xl bg-[#eff8ee] px-4 py-3 text-sm font-bold text-[#315b40]">{notice}</p>}
-    {editing !== null && <Dialog title={`Edit: ${memories[editing][0]}`} onClose={() => setEditing(null)}><label htmlFor="memory-detail" className="mt-5 block text-sm font-extrabold text-[#38564a]">What should Faraday remember?</label><textarea id="memory-detail" value={draft} onChange={(event) => setDraft(event.target.value)} className="mt-2 min-h-28 w-full rounded-xl border border-[#d2dfc9] bg-[#f8fbf4] p-3 text-sm outline-none focus:ring-4 focus:ring-[#e2f4dd]" /><div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setEditing(null)} className="rounded-xl px-4 py-3 text-sm font-extrabold text-[#4d6856]">Cancel</button><button type="button" onClick={save} className="rounded-xl bg-[#246946] px-4 py-3 text-sm font-extrabold text-white">Save memory</button></div></Dialog>}
   </>;
 }
 

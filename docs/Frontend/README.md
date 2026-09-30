@@ -54,18 +54,15 @@ Dashboard routes are protected by Clerk through `components/student-page.tsx`.
 - Local state is limited to drafts, selection state, optimistic feedback, open dialogs, and streamed text.
 - Server responses use typed UI blocks rather than returning arbitrary HTML.
 
-## Planned lesson rendering contract
+## Lesson rendering contract
 
 The frontend should support a small, explicit set of blocks:
 
 ```ts
-type LessonBlock =
-  | { type: "teacher_message"; text: string }
-  | { type: "choice_question"; prompt: string; choices: Choice[] }
-  | { type: "free_response"; prompt: string; placeholder: string }
-  | { type: "explanation"; title: string; body: string; analogy?: string }
-  | { type: "feedback"; tone: "success" | "hint" | "retry"; text: string }
-  | { type: "lesson_complete"; summary: string; nextTopic?: string };
+type LessonUi =
+  | { type: "teaching_cards"; title: string; cards: TeachingCard[]; nextTopics: Choice[] }
+  | { type: "next_topics"; prompt: string; choices: Choice[] }
+  | { type: "lesson_complete"; summary: string };
 ```
 
 Never render model-generated markup directly.
