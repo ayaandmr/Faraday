@@ -17,6 +17,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ ses
   try { return NextResponse.json(await submitLearningTurn(userId, (await params).sessionId, parsed.data, crypto.randomUUID()), { headers: { "Cache-Control": "no-store" } }); }
   catch (error) {
     if (error instanceof LearningServiceError) return fail(error.code, error.message, error.status, error.retryable);
+    console.error("[Faraday turns]", error instanceof Error ? error.message : error);
     return fail("LEARNING_UNAVAILABLE", "Faraday could not prepare the next step.", 503, true);
   }
 }

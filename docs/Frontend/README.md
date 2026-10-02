@@ -17,8 +17,7 @@
 | `/sign-in`, `/sign-up` | Clerk authentication | Implemented |
 | `/dashboard` | Learning home and continuation cards | Prototype |
 | `/dashboard/learn` | Topic setup and adaptive lesson demo | Prototype |
-| `/dashboard/lessons` | Learning paths | Prototype |
-| `/dashboard/suggested` | Personalized recommendations | Prototype |
+| `/dashboard/lessons` | Active, completed, and suggested lessons | Live data |
 | `/dashboard/progress` | Mastery and gaps | Prototype |
 | `/dashboard/tests` | Test modes and feedback dialog | Prototype |
 | `/dashboard/memory` | Inspect and edit learner memories | Prototype |
@@ -61,8 +60,7 @@ The frontend should support a small, explicit set of blocks:
 ```ts
 type LessonUi =
   | { type: "teaching_cards"; title: string; cards: TeachingCard[]; nextTopics: Choice[] }
-  | { type: "next_topics"; prompt: string; choices: Choice[] }
-  | { type: "lesson_complete"; summary: string };
+  | { type: "lesson_complete"; summary: string; nextTopics: Choice[] };
 ```
 
 Never render model-generated markup directly.

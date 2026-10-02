@@ -1,3 +1,5 @@
+-- Kept for migration-history compatibility. The application no longer requires
+-- these columns and also works when only the base migration has been applied.
 alter table public.student_profiles
   add column if not exists preferred_format text not null default 'real_examples';
 

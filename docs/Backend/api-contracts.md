@@ -10,7 +10,7 @@ All endpoints require a Clerk session. User identity is always derived server-si
 | `POST /api/learning/sessions` | Create a session and return AI-generated subtopic cards. First use requires `gradeLevel` and `pilotConsent: true`. |
 | `GET /api/learning/sessions` | Return compact active-session cards for My Learning. |
 | `GET /api/learning/sessions/:sessionId` | Restore the current card for an owned session. |
-| `POST /api/learning/sessions/:sessionId/turns` | Submit `understand`, `confused`, `ask_follow_up`, or `choose_next`. |
+| `POST /api/learning/sessions/:sessionId/turns` | Submit `understand`, `confused`, or `ask_follow_up`. Understanding automatically opens the next easiest part. |
 | `GET /api/learning/memories` | Read real saved learning memories. |
 | `DELETE /api/learning/memories/:memoryId` | Remove one saved memory. |
 

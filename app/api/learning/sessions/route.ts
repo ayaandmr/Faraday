@@ -9,14 +9,15 @@ export const dynamic = "force-dynamic";
 const fail = (code: string, message: string, status: number, retryable = false) => NextResponse.json<LearningError>({ error: { code, message, retryable } }, { status });
 function serviceFail(error: unknown) {
   if (error instanceof LearningServiceError) return fail(error.code, error.message, error.status, error.retryable);
-  return fail("LEARNING_UNAVAILABLE", "Faraday is not ready right now. Please try again.", 503, true);
+  console.error("[Faraday sessions]", error instanceof Error ? error.message : error);
+  return fail("LEARNING_UNAVAILABLE", "Faraday could not start the lesson. Please retry.", 503, true);
 }
 
 export async function GET() {
   const { userId } = await auth();
   if (!userId) return fail("UNAUTHENTICATED", "Sign in to see your learning.", 401);
   try { return NextResponse.json({ sessions: await getActiveSessionCards(userId) }, { headers: { "Cache-Control": "no-store" } }); }
-  catch { return fail("LEARNING_UNAVAILABLE", "Faraday could not load your learning sessions.", 503, true); }
+  catch (error) { console.error("[Faraday sessions:list]", error instanceof Error ? error.message : error); return fail("LEARNING_UNAVAILABLE", "Faraday could not load your learning sessions.", 503, true); }
 }
 
 export async function POST(request: Request) {

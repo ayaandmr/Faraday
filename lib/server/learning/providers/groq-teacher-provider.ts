@@ -16,7 +16,7 @@ const lessonJson = { type: "object", properties: {
   memoryCandidates: { type: "array", maxItems: 3, items: { type: "object", properties: { type: { type: "string", enum: ["preference", "interest", "goal", "misconception", "strategy_success"] }, content: { type: "string" }, confidence: { type: "number" } }, required: ["type", "content", "confidence"], additionalProperties: false } },
 }, required: ["teacherMessage", "lessonTitle", "cards", "nextTopics", "summary", "memoryCandidates"], additionalProperties: false };
 
-const policy = `You are Faraday, a patient personal teacher for an age-13+ learning pilot. Your writing must be so clear that a much younger learner could follow it. Teach before asking anything. Define every new word. Start from zero when level is new. Break the explanation into 3–6 cards, one tiny idea per card, ordered easiest to harder. Each card uses short sentences and one concrete example. Never quiz the student in these cards. Never shame confusion. When the learner is confused, re-teach the same idea using simpler words and a different example. Never claim to browse, recommend an unverified video, infer sensitive traits, help cheating, or provide dangerous instructions. Only create harmless memory candidates explicitly stated by the learner.`;
+const policy = `You are Faraday, a patient personal teacher for an age-13+ learning pilot. Write so clearly that a much younger learner could follow. Teach before asking anything. Define every new word. Start from zero when level is new. Make 3 or 4 cards with one tiny idea per card, ordered easiest to harder. Each card has 2 to 4 short sentences and one concrete example. Never quiz the student in these cards. Never shame confusion. When the learner is confused, re-teach the same idea with simpler words and a different everyday example. Never claim to browse, recommend an unverified video, infer sensitive traits, help cheating, or provide dangerous instructions. Only create harmless memory candidates explicitly stated by the learner.`;
 
 function contextText(context: TeacherContext) {
   const memories = context.memories.map((item) => `${item.type}: ${item.content}`).join(" | ") || "none";
@@ -37,18 +37,28 @@ export class GroqTeacherProvider implements TeacherProvider {
   }
 
   async createLesson(context: TeacherContext): Promise<TeacherLesson> {
-    const instruction = context.studentMessage === "I am confused."
+    const instruction = context.studentMessage?.startsWith("I am confused")
       ? "Re-teach the current part from the beginning. Use easier words, a new everyday example, and no test question."
+      : context.studentMessage?.startsWith("I understand")
+        ? "Teach the named next part now. Connect it to the previous part, but make it only one small step harder."
       : context.phase === "teach" && !context.sessionSummary
         ? "Create the first foundations lesson. If the learner is brand new, begin with what the topic means before any deeper idea."
         : "Continue the lesson by directly answering the latest message or teaching the selected next part. Do not test the learner.";
-    const completion = await this.client.chat.completions.create({
-      model: this.model, reasoning_effort: "low", max_completion_tokens: 1_100,
-      messages: [{ role: "system", content: policy }, { role: "user", content: `${contextText(context)}\n${instruction}\nAt the end, propose 2–4 next parts ordered easiest to harder.` }],
-      response_format: { type: "json_schema", json_schema: { name: "faraday_card_lesson", strict: true, schema: lessonJson } },
-    });
-    const content = completion.choices[0]?.message.content;
-    if (!content) throw new Error("Groq returned an empty lesson.");
-    return lessonSchema.parse(JSON.parse(content));
+    let lastError: unknown;
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        const completion = await this.client.chat.completions.create({
+          model: this.model, reasoning_effort: "low", max_completion_tokens: 1_800,
+          messages: [{ role: "system", content: policy }, { role: "user", content: `${contextText(context)}\n${instruction}\nReturn concise cards. At the end, propose 2-4 next parts ordered easiest to harder.${attempt ? " Keep the JSON especially short." : ""}` }],
+          response_format: { type: "json_schema", json_schema: { name: "faraday_card_lesson", strict: true, schema: lessonJson } },
+        });
+        const content = completion.choices[0]?.message.content;
+        if (!content) throw new Error("Groq returned an empty lesson.");
+        return lessonSchema.parse(JSON.parse(content));
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    throw lastError instanceof Error ? lastError : new Error("Groq could not create a valid lesson.");
   }
 }

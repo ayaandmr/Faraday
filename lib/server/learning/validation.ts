@@ -14,13 +14,9 @@ export const startSessionSchema = z.object({
 });
 
 export const turnSchema = z.object({
-  action: z.enum(["understand", "confused", "ask_follow_up", "choose_next"]),
-  choiceId: z.string().trim().min(1).max(80).optional(),
+  action: z.enum(["understand", "confused", "ask_follow_up"]),
   answer: text(2_000).optional(),
 }).superRefine((value, context) => {
-  if (value.action === "choose_next" && !value.choiceId) {
-    context.addIssue({ code: "custom", message: "Choose the next topic card.", path: ["choiceId"] });
-  }
   if (value.action === "ask_follow_up" && !value.answer) {
     context.addIssue({ code: "custom", message: "Write a short question first.", path: ["answer"] });
   }

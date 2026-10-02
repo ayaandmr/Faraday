@@ -8,8 +8,8 @@ describe("learning request validation", () => {
     expect(parsed.success).toBe(true);
   });
 
-  it("rejects a next-topic action without an on-screen choice id", () => {
-    const parsed = parseBody(turnSchema, { action: "choose_next" });
+  it("rejects a follow-up action without a question", () => {
+    const parsed = parseBody(turnSchema, { action: "ask_follow_up" });
     expect(parsed.success).toBe(false);
   });
 });
@@ -22,7 +22,7 @@ describe("evidence progress", () => {
 
   it("marks uncertainty for review and preserves a subtopic start", () => {
     expect(calculateProgress(20, "confused", "confused").status).toBe("needs_review");
-    expect(calculateProgress(20, "engaged", "choose_next").status).toBe("learning");
+    expect(calculateProgress(20, "understood", "understand").status).toBe("learning");
   });
 
   it("normalizes duplicate memory text consistently", () => {

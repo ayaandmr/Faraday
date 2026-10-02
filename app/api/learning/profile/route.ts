@@ -12,7 +12,7 @@ export async function GET() {
   const { userId } = await auth();
   if (!userId) return fail("UNAUTHENTICATED", "Sign in to use Faraday.", 401);
   try { return NextResponse.json(await profileForUser(userId), { headers: { "Cache-Control": "no-store" } }); }
-  catch { return fail("SETUP_REQUIRED", "Faraday's learning database is not configured yet.", 503, true); }
+  catch (error) { console.error("[Faraday profile]", error instanceof Error ? error.message : error); return fail("SETUP_REQUIRED", "Faraday could not load your saved preferences. Please retry.", 503, true); }
 }
 
 export async function DELETE() {

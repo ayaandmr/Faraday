@@ -1,6 +1,6 @@
 # Pilot learning data
 
-Run migrations in filename order. Existing projects that already ran the first migration must also run `202609300002_saved_teaching_preferences.sql`.
+Run `supabase/migrations/202609300001_faraday_learning.sql` once in the Supabase SQL editor. Teaching-format preferences are stored in `student_memories`, so no follow-up schema migration is required.
 
 - `app_users`: Clerk user ID to internal UUID mapping.
 - `student_profiles`: grade, pilot consent time, preferred example style, and preferred answer format.
