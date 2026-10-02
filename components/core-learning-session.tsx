@@ -31,12 +31,61 @@ async function payload(response: Response) {
   return data;
 }
 
+type RoadmapStep = { id: string; label: string; state: "completed" | "current" | "upcoming" };
+
+function topicRoadmap(history: LessonHistoryItem[], lesson: LearningTurn) {
+  const completed: RoadmapStep[] = [];
+  const normalized = new Set<string>();
+  const add = (step: RoadmapStep) => {
+    const key = step.label.toLocaleLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    if (!key || normalized.has(key)) return;
+    normalized.add(key);
+    completed.push(step);
+  };
+
+  history.forEach((turn, index) => {
+    if (turn.ui.type !== "teaching_cards") return;
+    const nextMessage = history[index + 1]?.studentMessage.toLocaleLowerCase() ?? "";
+    if (nextMessage.startsWith("i understand")) add({ id: `done-${turn.id}`, label: turn.ui.title, state: "completed" });
+  });
+
+  if (lesson.ui.type === "lesson_complete") return { steps: completed, percentage: 100 };
+
+  const currentTurn = [...history].reverse().find((turn) => turn.ui.type === "teaching_cards");
+  if (currentTurn?.ui.type === "teaching_cards") add({ id: `current-${currentTurn.id}`, label: currentTurn.ui.title, state: "current" });
+  lesson.ui.nextTopics.slice(0, 4).forEach((topic) => add({ id: `next-${topic.id}`, label: topic.label, state: "upcoming" }));
+
+  const completedCount = completed.filter((step) => step.state === "completed").length;
+  const currentCredit = completed.some((step) => step.state === "current") ? 0.5 : 0;
+  const percentage = completed.length ? Math.round(((completedCount + currentCredit) / completed.length) * 100) : 0;
+  return { steps: completed, percentage };
+}
+
+function TopicRoadmap({ history, lesson }: { history: LessonHistoryItem[]; lesson: LearningTurn }) {
+  const { steps, percentage } = topicRoadmap(history, lesson);
+  if (!steps.length) return null;
+  return <section className="sticky top-0 z-40 w-full border-b-2 border-[#e5e5e5] bg-white/95 px-4 py-3 shadow-[0_5px_18px_rgba(35,70,20,.08)] backdrop-blur min-[700px]:px-7" aria-label={`${lesson.topic} progress`}>
+    <div className="flex min-h-12 items-center gap-3 min-[700px]:gap-6">
+      <div className="grid min-w-0 flex-1 gap-1.5 min-[700px]:gap-2.5" style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percentage}>
+        {steps.map((step) => <div key={step.id} className="relative h-10 min-w-0 overflow-hidden rounded-xl border-2 border-[#dedede] bg-[#f1f1f1] shadow-[0_3px_0_#dedede]" title={step.label}>
+          <div className={`absolute inset-y-0 left-0 transition-all duration-500 ${step.state === "completed" ? "w-full bg-[#58cc02]" : step.state === "current" ? "w-1/2 bg-[#89e219]" : "w-0"}`} />
+          <span className={`relative z-10 grid h-full place-items-center truncate px-1 text-center text-[10px] font-black leading-3 min-[600px]:text-xs min-[1000px]:text-sm ${step.state === "completed" ? "text-white" : "text-[#4b4b4b]"}`}>{step.label}</span>
+        </div>)}
+      </div>
+      <div className="w-[70px] shrink-0 text-center min-[700px]:w-[98px]">
+        <strong className="block text-[28px] font-black leading-none tracking-[-1.5px] text-[#58a700] min-[700px]:text-[34px]">{percentage}%</strong>
+        <span className="mt-1 block text-[8px] font-black uppercase tracking-[.7px] text-[#777] min-[700px]:text-[9px]">Complete</span>
+      </div>
+    </div>
+  </section>;
+}
+
 function LessonResponse({ turn, latest, progressLabel, busy, draft, onDraftChange, onAsk, onUnderstood, onConfused, onNewTopic, responseRef }: {
   turn: LessonHistoryItem; latest: boolean; progressLabel: string; busy: boolean; draft: string;
   onDraftChange: (value: string) => void; onAsk: () => void; onUnderstood: () => void; onConfused: () => void; onNewTopic: () => void;
   responseRef: RefObject<HTMLDivElement | null>;
 }) {
-  return <div ref={latest ? responseRef : undefined} className="scroll-mt-6">
+  return <div ref={latest ? responseRef : undefined} className="scroll-mt-24">
     <div className="ml-auto max-w-[760px] rounded-[22px_22px_6px_22px] border border-[#c9d9c7] bg-white p-5">
       <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#6d8173]">You</p>
       <p className="mt-2 text-lg font-bold">{turn.studentMessage || "I started this topic."}</p>
@@ -189,7 +238,16 @@ export function CoreLearningSession() {
 
   const history = lesson?.history.length ? lesson.history : lesson ? [{ id: "current", studentMessage: lesson.studentMessage, teacherMessage: lesson.teacherMessage, ui: lesson.ui }] : [];
 
+  if (lesson) return <>
+    <TopicRoadmap history={history} lesson={lesson} />
+    <main className="mx-auto max-w-[1040px] px-5 py-7 min-[800px]:px-8 min-[1100px]:py-10">
+      {error && <p role="alert" className="mb-5 rounded-xl border border-[#e6b895] bg-[#fff0d3] px-4 py-3 text-sm font-bold text-[#72551e]">{error}</p>}
+      <section className="space-y-7">{history.map((turn, index) => <LessonResponse key={turn.id} turn={turn} latest={index === history.length - 1} progressLabel={lesson.progress.evidenceLabel} busy={busy} draft={draft} onDraftChange={setDraft} onAsk={ask} onUnderstood={() => void sendTurn("understand")} onConfused={() => void sendTurn("confused")} onNewTopic={newTopic} responseRef={responseRef}/>)}</section>
+    </main>
+  </>;
+
   return <>
+    <div className="mx-auto max-w-[1040px] px-5 py-7 min-[800px]:px-8 min-[1100px]:py-10">
     <p className="eyebrow">Your personal teacher</p>
     <h1>What do you want to understand?</h1>
     <p className="intro">Ask normally. Faraday starts with the basics, explains one idea at a time, and remembers how you like to learn.</p>
@@ -223,6 +281,6 @@ export function CoreLearningSession() {
     </div>}
 
     {error && <p role="alert" className="mt-5 rounded-xl border border-[#e6b895] bg-[#fff0d3] px-4 py-3 text-sm font-bold text-[#72551e]">{error}</p>}
-    {lesson && <section className="mt-7 space-y-7">{history.map((turn, index) => <LessonResponse key={turn.id} turn={turn} latest={index === history.length - 1} progressLabel={lesson.progress.evidenceLabel} busy={busy} draft={draft} onDraftChange={setDraft} onAsk={ask} onUnderstood={() => void sendTurn("understand")} onConfused={() => void sendTurn("confused")} onNewTopic={newTopic} responseRef={responseRef}/>)}</section>}
+    </div>
   </>;
 }

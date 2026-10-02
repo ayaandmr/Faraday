@@ -91,10 +91,9 @@ stateDiagram-v2
     TopicSetup --> TeachBasics
     TeachBasics --> Reteach: confused
     Reteach --> TeachBasics
-    TeachBasics --> ChooseNext: understands
-    ChooseNext --> TeachNext
+    TeachBasics --> TeachNext: understands; easiest next part selected automatically
     TeachNext --> Reteach: confused
-    TeachNext --> ChooseNext: understands
+    TeachNext --> TeachNext: understands; advance in difficulty
 ```
 
 ## Structured model result

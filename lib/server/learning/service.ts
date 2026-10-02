@@ -15,10 +15,14 @@ function evidenceLabel(status: ProgressStatus, confidence: number) {
 }
 
 type StoredSession = NonNullable<Awaited<ReturnType<typeof getSession>>>;
-async function toTurn(session: StoredSession, provider: { id: string; model: string }, studentMessage = session.topic): Promise<LearningTurn> {
+async function toTurn(session: StoredSession, provider: { id: string; model: string }, fallbackStudentMessage?: string): Promise<LearningTurn> {
   const history = await getSessionHistory(session.id);
-  const current: LessonHistoryItem = { id: `current-${session.id}`, studentMessage, teacherMessage: session.current_teacher_message, ui: session.current_ui };
-  if (!history.length || history.at(-1)?.teacherMessage !== current.teacherMessage || history.at(-1)?.studentMessage !== current.studentMessage) history.push(current);
+  const savedCurrent = history.at(-1);
+  const currentMatchesSavedTurn = savedCurrent?.teacherMessage === session.current_teacher_message;
+  const studentMessage = currentMatchesSavedTurn ? savedCurrent.studentMessage : fallbackStudentMessage ?? session.topic;
+  if (!currentMatchesSavedTurn) {
+    history.push({ id: `current-${session.id}`, studentMessage, teacherMessage: session.current_teacher_message, ui: session.current_ui });
+  }
   return { sessionId: session.id, topic: session.topic, studentMessage, teacherMessage: session.current_teacher_message, ui: session.current_ui, history, nextAction: session.phase, progress: { status: session.progress_status, confidence: session.progress_confidence, evidenceLabel: evidenceLabel(session.progress_status, session.progress_confidence) }, sessionSummary: session.summary, meta: { provider: provider.id, model: provider.model, prototype: false } };
 }
 
