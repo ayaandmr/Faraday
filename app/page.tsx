@@ -1,3 +1,5 @@
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 import { PilotCta } from "../components/pilot-cta";
 import { SiteFooter } from "../components/site-footer";
 import { SiteNav } from "../components/site-nav";
@@ -18,7 +20,10 @@ const features = [
   { number: "04", title: "Progress you can feel", body: "Your learning path keeps moving, so every session starts a little closer to what you need next.", accent: "coral" },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const { userId } = await auth();
+  if (userId) redirect("/dashboard");
+
   return (
     <main className="landing-page">
 
