@@ -5,44 +5,15 @@ import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
 import { useState, type ReactNode } from "react";
 import { ThemeToggle } from "./theme-toggle";
-import { MemoryPrototype, SettingsPrototype, TestPrototype } from "./prototype-pages";
+import { SettingsPrototype, TestPrototype } from "./prototype-pages";
 import { CoreLearningSession } from "./core-learning-session";
+import { ChapterMap } from "./chapter-map";
+import { DashboardSidebar } from "./dashboard-sidebar";
 import type { LessonLibrary, SessionCard, SuggestedLesson } from "../lib/learning/contracts";
 
 export type LearningPage = "learning" | "learn" | "lessons" | "suggested" | "progress" | "tests" | "memory" | "settings";
 
 type Props = { firstName: string; page: LearningPage; lessonLibrary: LessonLibrary };
-
-const nav = [
-  ["/dashboard", "learning", <SidebarLabel key="learning" label="My learning" status="pending" />, <SidebarIcon key="home" name="home" />],
-  ["/dashboard/learn", "learn", <SidebarLabel key="learn" label="Start a topic" status="asap" />, <SidebarIcon key="sparkle" name="sparkle" />],
-  ["/dashboard/lessons", "lessons", <SidebarLabel key="lessons" label="Lessons" />, <SidebarIcon key="book" name="book" />],
-  ["/dashboard/progress", "progress", <SidebarLabel key="progress" label="My progress" status="soon" />, <SidebarIcon key="chart" name="chart" />],
-  ["/dashboard/tests", "tests", <SidebarLabel key="tests" label="Tests" status="soon" />, <SidebarIcon key="checklist" name="checklist" />],
-  ["/dashboard/memory", "memory", <SidebarLabel key="memory" label="Memory & preferences" status="soon" />, <SidebarIcon key="brain" name="brain" />],
-] as const;
-
-type SidebarStatus = "asap" | "pending" | "soon";
-
-function SidebarLabel({ label, status }: { label: string; status?: SidebarStatus }) {
-  const statusLabel = status === "asap" ? "ASAP" : status === "pending" ? "Pending" : "Soon";
-  return <span className="flex min-w-0 flex-1 items-center justify-between gap-2"><span className="truncate">{label}</span>{status && <span className={`sidebar-status sidebar-status-${status}`} title={`${statusLabel}: work still needed`}><span>{statusLabel}</span></span>}</span>;
-}
-
-type SidebarIconName = "home" | "sparkle" | "book" | "chart" | "checklist" | "brain";
-
-function SidebarIcon({ name }: { name: SidebarIconName }) {
-  const paths: Record<SidebarIconName, ReactNode> = {
-    home: <><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z" /><path d="M9 21v-6h6v6" /></>,
-    sparkle: <><path d="m12 3 1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7Z" /><path d="m19 16 .7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7Z" /></>,
-    book: <><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21Z" /><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5A2.5 2.5 0 0 1 20 21Z" /></>,
-    chart: <><path d="M4 20V4" /><path d="M4 20h17" /><path d="m7 15 4-4 3 2 5-6" /><path d="M16 7h3v3" /></>,
-    checklist: <><rect x="5" y="3" width="14" height="18" rx="2" /><path d="M9 3.5h6v3H9z" /><path d="m8.5 11 1.5 1.5 3-3" /><path d="M14.5 11H16" /><path d="m8.5 16 1.5 1.5 3-3" /><path d="M14.5 16H16" /></>,
-    brain: <><path d="M9.5 4.2A3.2 3.2 0 0 0 4 6.5a3.2 3.2 0 0 0 .1 5.8A3.4 3.4 0 0 0 7 17.8V20h3V4.2Z" /><path d="M14.5 4.2A3.2 3.2 0 0 1 20 6.5a3.2 3.2 0 0 1-.1 5.8 3.4 3.4 0 0 1-2.9 5.5V20h-3V4.2Z" /><path d="M7 8h2.5M17 8h-2.5M7 13h2.5M17 13h-2.5" /></>,
-  };
-
-  return <svg viewBox="0 0 24 24" className="size-[18px]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
-}
 
 function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <div className={`learning-card rounded-[22px] border border-[#dfe7d7] bg-white ${className}`}>{children}</div>;
@@ -53,13 +24,14 @@ function Choice({ children, selected, onClick }: { children: ReactNode; selected
 }
 
 function LearningHome({ firstName, activeSessions }: { firstName: string; activeSessions: SessionCard[] }) {
+  const next = activeSessions[0];
   return <>
     <p className="eyebrow">Your learning space</p><h1>Good to see you, {firstName}.</h1><p className="intro">Your teacher has kept a few small wins ready for today.</p>
     <div className="mt-7 overflow-hidden rounded-[27px] border border-[#e6cf70] bg-[#fff1b9] p-6 shadow-[0_7px_0_#ead579] min-[750px]:p-8">
-      <p className="eyebrow text-[#80660b]">Your next best step</p><h2 className="mt-2 max-w-xl">Why doesn&apos;t the Moon fall down?</h2><p className="mt-3 max-w-lg text-sm leading-relaxed text-[#705f25]">You already understand gravity. Let&apos;s use a space story to untangle the one part that felt tricky: orbits.</p>
-      <Link href="/dashboard/learn" className="mt-5 inline-block rounded-xl bg-[#246946] px-4 py-3 text-sm font-extrabold text-white shadow-[0_3px_0_#143d2b] transition hover:-translate-y-0.5">Start the 8-minute mission →</Link>
+      <p className="eyebrow text-[#80660b]">{next ? "Your next best step" : "Your first chapter awaits"}</p><h2 className="mt-2 max-w-xl">{next ? next.topic : "What would you like to understand?"}</h2><p className="mt-3 max-w-lg text-sm leading-relaxed text-[#705f25]">{next ? next.awaitingApproval ? "Your chapter map is ready. Review it, change anything you like, then start when it feels right." : "Your short learning journey is saved. Pick up right where you left off." : "Choose any topic. Faraday will ask a few quick questions, then build your own short chapter map."}</p>
+      <Link href={next ? `/dashboard/learn?session=${encodeURIComponent(next.id)}` : "/dashboard/learn"} className="mt-5 inline-block rounded-xl bg-[#246946] px-4 py-3 text-sm font-extrabold text-white shadow-[0_3px_0_#143d2b] transition hover:-translate-y-0.5">{next ? next.awaitingApproval ? "Review my chapter map →" : "Continue learning →" : "Start a topic →"}</Link>
     </div>
-    <section className="mt-8"><div className="section-heading"><div><p className="eyebrow">Continue learning</p><h2>Pick up a thread</h2></div><Link href="/dashboard/learn">Start a topic →</Link></div>{activeSessions.length ? <div className="mt-4 grid gap-4 min-[680px]:grid-cols-3">{activeSessions.map((session) => <Card key={session.id} className="group p-4 transition hover:-translate-y-1 hover:border-[#b7d6c0] hover:shadow-[0_12px_28px_rgba(28,65,45,.11)]"><div className="mb-5 grid size-12 place-items-center rounded-2xl bg-[#b8ebc9] text-xl shadow-[0_3px_0_rgba(23,53,42,.10)]">✦</div><div className="flex justify-between gap-2 text-[10px] font-extrabold uppercase tracking-[.8px] text-[#6e8173]"><span>{session.subtopic ?? "Choose a mini-mission"}</span><span className="text-[#246946]">{session.confidence}%</span></div><h3 className="mt-1 text-lg font-bold tracking-[-.7px]">{session.topic}</h3><p className="mt-1 text-xs text-[#718173]">{session.progressStatus.replace("_", " ")}</p><div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[#eaf0e5]"><div className="h-full rounded-full bg-[#56b878]" style={{ width: `${session.confidence}%` }} /></div><Link href={`/dashboard/learn?session=${encodeURIComponent(session.id)}`} className="mt-4 inline-block text-sm font-extrabold text-[#246946] transition group-hover:translate-x-1">Continue →</Link></Card>)}</div> : <Card className="mt-4 p-5"><h3 className="text-xl">Your first thread is ready to begin.</h3><p className="mt-2 text-sm text-[#687d6d]">Start any Grade 8–12 topic and Faraday will save your place here.</p><Link href="/dashboard/learn" className="mt-4 inline-block text-sm font-extrabold text-[#246946]">Start a topic →</Link></Card>}</section>
+    <section className="mt-8"><div className="section-heading"><div><p className="eyebrow">Continue learning</p><h2>Your chapter maps</h2></div><Link href="/dashboard/learn">Start a topic →</Link></div>{activeSessions.length ? <div className="mt-4 grid gap-4 min-[680px]:grid-cols-2">{activeSessions.map((session) => <LessonSessionCard key={session.id} session={session} />)}</div> : <Card className="mt-4 p-5"><h3 className="text-xl">Your first chapter is ready to begin.</h3><p className="mt-2 text-sm text-[#687d6d]">Start any Grade 8–12 topic and Faraday will save your place here.</p><Link href="/dashboard/learn" className="mt-4 inline-block text-sm font-extrabold text-[#246946]">Start a topic →</Link></Card>}</section>
   </>;
 }
 
@@ -76,7 +48,9 @@ function LearnPage() {
 }
 
 function LessonSessionCard({ session, completed = false }: { session: SessionCard; completed?: boolean }) {
-  return <Card className="group p-5 transition hover:-translate-y-1 hover:border-[#b7d6c0] hover:shadow-[0_12px_28px_rgba(28,65,45,.11)]"><div className="flex items-start justify-between gap-3"><div className={`grid size-11 place-items-center rounded-2xl text-lg ${completed ? "bg-[#dff5e5]" : "bg-[#fff1b9]"}`}>{completed ? "✓" : "▶"}</div><span className="rounded-full bg-[#eff6eb] px-3 py-1 text-xs font-extrabold text-[#246946]">{completed ? "Completed" : `${session.confidence}%`}</span></div><p className="mt-5 text-[10px] font-extrabold uppercase tracking-wide text-[#6e8173]">{session.subtopic ?? "Foundations"}</p><h3 className="mt-1 text-xl font-bold">{session.topic}</h3><p className="mt-2 text-sm text-[#687d6d]">{completed ? "Open your finished lesson any time." : "Continue exactly where you stopped."}</p><Link href={`/dashboard/learn?session=${encodeURIComponent(session.id)}`} className="mt-5 inline-block text-sm font-extrabold text-[#246946]">{completed ? "Review lesson" : "Continue lesson"} →</Link></Card>;
+  const totalSteps = session.plan?.chapters.reduce((count, chapter) => count + chapter.steps.length, 0) ?? 0;
+  const finishedSteps = completed ? totalSteps : session.stepIndex ?? 0;
+  return <Card className="group p-5 transition hover:-translate-y-1 hover:border-[#b7d6c0] hover:shadow-[0_12px_28px_rgba(28,65,45,.11)]"><div className="flex items-start justify-between gap-3"><div className={`grid size-11 place-items-center rounded-2xl text-lg ${completed ? "bg-[#dff5e5]" : "bg-[#fff1b9]"}`}>{completed ? "✓" : "▶"}</div><span className="rounded-full bg-[#eff6eb] px-3 py-1 text-xs font-extrabold text-[#246946]">{completed ? "Completed" : session.awaitingApproval ? "Map ready" : session.plan ? `${finishedSteps}/${totalSteps} steps` : `${session.confidence}%`}</span></div><p className="mt-5 text-[10px] font-extrabold uppercase tracking-wide text-[#6e8173]">{session.subtopic ?? "Your short book"}</p><h3 className="mt-1 text-xl font-bold">{session.topic}</h3><p className="mt-2 text-sm text-[#687d6d]">{completed ? "Revisit every chapter whenever you like." : session.awaitingApproval ? "Review or rewrite this map before your first chapter." : "Continue exactly where you stopped."}</p>{session.plan && <ChapterMap plan={session.plan} stepIndex={finishedSteps} compact />}<Link href={`/dashboard/learn?session=${encodeURIComponent(session.id)}`} className="mt-5 inline-block text-sm font-extrabold text-[#246946]">{completed ? "Review lesson" : session.awaitingApproval ? "Review map" : "Continue lesson"} →</Link></Card>;
 }
 
 function SuggestedLessonCard({ lesson }: { lesson: SuggestedLesson }) {
@@ -105,9 +79,9 @@ function MemoryPage() { const memories = [["Learning style", "You usually enjoy 
 function SettingsPage() { return <><p className="eyebrow">Your space</p><h1>Settings.</h1><p className="intro">Personalisation controls and account preferences will live here.</p><Card className="mt-7 p-5"><h2 className="text-[23px]">Learning preferences</h2><p className="mt-2 text-sm text-[#687d6d]">Choose how much personalisation you want Faraday to use.</p><div className="mt-5 flex items-center justify-between rounded-xl bg-[#f2f8ee] p-4"><span className="text-sm font-extrabold">Personalised lesson suggestions</span><span className="rounded-full bg-[#246946] px-3 py-1 text-xs font-extrabold text-white">On</span></div></Card></>; }
 
 export function LearningExperience({ firstName, page, lessonLibrary }: Props) {
-  const content = <>{page !== "learn" && <div className="mb-5 flex justify-end"><ThemeToggle /></div>}{ { learning: <LearningHome firstName={firstName} activeSessions={lessonLibrary.active} />, learn: <CoreLearningSession />, lessons: <LessonsPage library={lessonLibrary} />, suggested: <LessonsPage library={lessonLibrary} />, progress: <ProgressPage />, tests: <TestPrototype />, memory: <MemoryPrototype />, settings: <SettingsPrototype /> }[page] }</>;
-  return <main className="min-h-screen bg-[#f4f8ef] p-0 text-[#17352a] min-[800px]:h-screen min-[800px]:overflow-hidden min-[800px]:p-4"><div className="mx-auto flex min-h-screen max-w-[1540px] overflow-hidden bg-[#fffdf8] shadow-[0_18px_60px_rgba(28,65,45,.12)] min-[800px]:h-full min-[800px]:min-h-0 min-[800px]:rounded-[30px] min-[800px]:border min-[800px]:border-[#dce5d3]">
-    <aside className="hidden h-full w-[224px] shrink-0 flex-col border-r border-[#e1e9d8] bg-[#f7faef] p-4 min-[800px]:flex"><Link href="/" className="group mb-6 flex items-center gap-2 text-lg font-extrabold tracking-[-1px]"><Image className="size-9 object-contain transition group-hover:rotate-6" src="/brand/logo.png" width={36} height={36} alt=""/>Faraday AI</Link><p className="mb-2 px-2.5 text-[9px] font-extrabold uppercase tracking-[1.3px] text-[#819080]">Learn</p><nav className="space-y-1 text-[13px] font-extrabold">{nav.map(([href, id, label, icon]) => <Link key={id} href={href} className={`flex items-center gap-2.5 rounded-xl px-2.5 py-2 transition ${page === id ? "bg-[#dff5e5] text-[#1d7648] shadow-[inset_0_0_0_1px_#b8ebc9]" : "text-[#607565] hover:bg-[#eaf1e1] hover:text-[#246946]"}`}><span className={`grid size-7 place-items-center rounded-lg text-sm ${page === id ? "bg-[#246946] text-white" : "bg-[#e4ebda]"}`}>{icon}</span>{label}</Link>)}</nav><div className="mt-auto space-y-2.5"><div className="rounded-xl border border-[#d9e5cd] bg-white p-3"><div className="flex justify-between text-[11px] font-extrabold"><span className="text-[#4d6856]">Weekly goal</span><span className="text-[#246946]">3 / 5</span></div><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#e5ecdc]"><div className="h-full w-[60%] rounded-full bg-[#56b878]"/></div></div><Link href="/dashboard/learn" className="block w-full rounded-xl bg-[#ffd53d] px-3 py-2.5 text-center text-xs font-extrabold shadow-[0_3px_0_#dcae10]">+ New session</Link><Link href="/dashboard/settings" className="block text-center text-[11px] font-extrabold text-[#607565] hover:text-[#246946]">Settings</Link><div className="flex items-center gap-2 border-t border-[#dfe7d5] pt-3"><UserButton/><span className="text-[11px] font-bold text-[#617668]">Your account</span></div></div></aside>
+  const content = <>{page !== "learn" && <div className="mb-5 flex justify-end"><ThemeToggle /></div>}{ { learning: <LearningHome firstName={firstName} activeSessions={lessonLibrary.active} />, learn: <CoreLearningSession />, lessons: <LessonsPage library={lessonLibrary} />, suggested: <LessonsPage library={lessonLibrary} />, progress: <ProgressPage />, tests: <TestPrototype />, memory: <SettingsPrototype />, settings: <SettingsPrototype /> }[page] }</>;
+  return <main className="min-h-screen bg-[#fffdf8] p-0 text-[#17352a] min-[800px]:h-screen min-[800px]:overflow-hidden"><div className="flex min-h-screen w-full overflow-hidden bg-[#fffdf8] min-[800px]:h-full min-[800px]:min-h-0">
+    <DashboardSidebar activePage={page} />
     <section className={page === "learn" ? "min-w-0 flex-1 overflow-y-auto" : "min-w-0 flex-1 overflow-y-auto p-5 min-[800px]:p-8 min-[1100px]:p-10"}><div className={page === "learn" ? "w-full pb-8" : "mx-auto max-w-[1040px] pb-8"}>{page !== "learn" && <header className="mb-7 flex items-center justify-between min-[800px]:hidden"><Link href="/dashboard" className="flex items-center gap-2 font-extrabold"><Image className="size-8" src="/brand/logo.png" width={32} height={32} alt=""/>Faraday AI</Link><UserButton/></header>}{page !== "learn" && <div className="mb-5 flex justify-end"><span className="rounded-full border border-[#ece4be] bg-[#fff9df] px-3 py-2 text-xs font-extrabold text-[#725904]">3 day streak 🔥</span></div>}{content}</div></section>
   </div></main>;
 }

@@ -15,8 +15,8 @@
 | `/` | Marketing site | Implemented |
 | `/about`, `/privacy`, `/terms` | Information pages | Implemented |
 | `/sign-in`, `/sign-up` | Clerk authentication | Implemented |
-| `/dashboard` | Learning home and continuation cards | Prototype |
-| `/dashboard/learn` | Topic setup and adaptive lesson demo | Prototype |
+| `/dashboard` | Learning home and saved chapter-map continuation cards | Live data |
+| `/dashboard/learn` | Context questions, editable chapter map, and adaptive lesson | Live data |
 | `/dashboard/lessons` | Active, completed, and suggested lessons | Live data |
 | `/dashboard/progress` | Mastery and gaps | Prototype |
 | `/dashboard/tests` | Test modes and feedback dialog | Prototype |
@@ -33,7 +33,10 @@ Dashboard routes are protected by Clerk through `components/student-page.tsx`.
 | `site-footer.tsx` | Shared public footer |
 | `info-page.tsx` | Layout for About, Privacy, and Terms |
 | `student-page.tsx` | Authenticated dashboard entry and learner name loading |
-| `learning-experience.tsx` | Dashboard shell, sidebar, shared cards, and route composition |
+| `learning-experience.tsx` | Dashboard shell, shared cards, and route composition |
+| `dashboard-sidebar.tsx` | Reusable navigation, account, and theme controls for dashboard routes |
+| `chapter-map.tsx` | Simplified chapter and subtopic titles with visual progress |
+| `core-learning-session.tsx` | Topic setup, plan approval, one-check-per-step teaching, and basic/advanced navigation |
 | `prototype-pages.tsx` | Interactive browser-only topic, test, memory, and settings demos |
 | `theme-toggle.tsx` | Persistent and synchronized light/dark selection |
 
@@ -41,11 +44,11 @@ Dashboard routes are protected by Clerk through `components/student-page.tsx`.
 
 ## State rules
 
-### Current prototype
+### Current behavior
 
-- React component state powers lesson choices, dialogs, answers, test feedback, memory edits, and settings.
-- The theme preference is the only browser-persisted UI state.
-- A refresh resets all lesson, test, memory, and progress demonstrations.
+- The chapter plan, lesson turns, and progress are saved server-side. A refresh restores the same plan or lesson from its session ID.
+- React state holds unsent one-question-at-a-time intake answers, the temporary topic-specific question, follow-up drafts, busy states, and plan-change text. Saved style and format are not asked again for returning students.
+- Tests and progress pages remain prototypes; lesson and memory pages have live data.
 
 ### Target behavior
 
@@ -59,8 +62,10 @@ The frontend should support a small, explicit set of blocks:
 
 ```ts
 type LessonUi =
-  | { type: "teaching_cards"; title: string; cards: TeachingCard[]; nextTopics: Choice[] }
-  | { type: "lesson_complete"; summary: string; nextTopics: Choice[] };
+  | { type: "plan_preview"; plan: LearningPlan; context: LearningContext }
+  | { type: "teaching_cards"; title: string; cards: TeachingCard[]; plan: LearningPlan; stepIndex: number; stage: "basic" | "advanced" }
+  | { type: "step_check"; check: StepCheck; plan: LearningPlan; stepIndex: number; stage: "basic" | "advanced"; skippedSteps?: string[] }
+  | { type: "lesson_complete"; summary: string; plan: LearningPlan; stage: "basic" | "advanced"; canAdvance?: boolean };
 ```
 
 Never render model-generated markup directly.

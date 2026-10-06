@@ -1,10 +1,11 @@
 # Backend
 
-The durable Start a Topic backend is implemented. It uses Clerk identity, Groq `openai/gpt-oss-20b` strict structured output, and Supabase Postgres. The model creates short teaching cards; the server owns authorization, progress, memory filtering, and persistence.
+The durable Start a Topic backend is implemented. It uses Clerk identity, Groq `openai/gpt-oss-20b` strict structured output, and Supabase Postgres. The model creates one topic-specific intake question, a short chapter map, and teaching cards; the server owns authorization, progress, memory filtering, and persistence.
 
 Implemented routes:
 
 - `GET` and `DELETE /api/learning/profile`
+- `POST /api/learning/intake`
 - `GET` and `POST /api/learning/sessions`
 - `GET /api/learning/sessions/:sessionId`
 - `POST /api/learning/sessions/:sessionId/turns`

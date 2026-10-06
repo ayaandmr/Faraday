@@ -1,2 +1,2 @@
-import { StudentPage } from "../../../components/student-page";
-export default function Memory() { return <StudentPage page="memory" />; }
+import { redirect } from "next/navigation";
+export default function Memory() { redirect("/dashboard/settings"); }

@@ -93,7 +93,16 @@ export async function ensureProfile(clerkUserId: string, gradeLevel: GradeLevel 
 
 export async function createSession(input: { userId: string; topic: string; style: TeachingStyle; format: ResponseFormat; level: LearnerLevel; summary: string; teacherMessage: string; ui: LessonUi; modelId: string }) {
   const db = getSupabaseAdmin();
-  const result = await db.from("learning_sessions").insert({ user_id: input.userId, topic: input.topic, style: input.style, declared_level: input.level, phase: "teach", summary: input.summary, current_teacher_message: input.teacherMessage, current_ui: input.ui, model_id: input.modelId, selected_subtopic_id: "foundations", selected_subtopic_label: `${input.topic} basics` }).select("*").single();
+  const isPreview = input.ui.type === "plan_preview";
+  const result = await db.from("learning_sessions").insert({ user_id: input.userId, topic: input.topic, style: input.style, declared_level: input.level, phase: isPreview ? "choose_subtopic" : "teach", summary: input.summary, current_teacher_message: input.teacherMessage, current_ui: input.ui, model_id: input.modelId, selected_subtopic_id: isPreview ? null : "foundations", selected_subtopic_label: isPreview ? null : `${input.topic} basics` }).select("*").single();
+  databaseError(result.error);
+  return result.data as DbSession;
+}
+
+export async function updatePlanPreview(session: DbSession, ui: LessonUi): Promise<DbSession> {
+  if (ui.type !== "plan_preview") throw new Error("Expected a plan preview.");
+  const db = getSupabaseAdmin();
+  const result = await db.from("learning_sessions").update({ current_ui: ui, current_teacher_message: ui.plan.introduction, last_active_at: new Date().toISOString() }).eq("id", session.id).eq("user_id", session.user_id).eq("phase", "choose_subtopic").select("*").single();
   databaseError(result.error);
   return result.data as DbSession;
 }
@@ -112,13 +121,15 @@ export async function getActiveSessionCards(clerkUserId: string): Promise<Sessio
   const user = await existingUser(clerkUserId);
   if (!user) return [];
   const db = getSupabaseAdmin();
-  const result = await db.from("learning_sessions").select("id, topic, selected_subtopic_label, progress_status, progress_confidence, last_active_at").eq("user_id", user.id).eq("status", "active").order("last_active_at", { ascending: false }).limit(6);
+  const result = await db.from("learning_sessions").select("id, topic, selected_subtopic_label, progress_status, progress_confidence, last_active_at, current_ui").eq("user_id", user.id).eq("status", "active").order("last_active_at", { ascending: false }).limit(6);
   databaseError(result.error);
-  return (result.data ?? []).map((row) => ({ id: row.id, topic: row.topic, subtopic: row.selected_subtopic_label, progressStatus: row.progress_status as ProgressStatus, confidence: row.progress_confidence, lastActiveAt: row.last_active_at }));
+  return (result.data ?? []).map(sessionCard);
 }
 
-function sessionCard(row: { id: string; topic: string; selected_subtopic_label: string | null; progress_status: string; progress_confidence: number; last_active_at: string }): SessionCard {
-  return { id: row.id, topic: row.topic, subtopic: row.selected_subtopic_label, progressStatus: row.progress_status as ProgressStatus, confidence: row.progress_confidence, lastActiveAt: row.last_active_at };
+function sessionCard(row: { id: string; topic: string; selected_subtopic_label: string | null; progress_status: string; progress_confidence: number; last_active_at: string; current_ui: unknown }): SessionCard {
+  const ui = row.current_ui as LessonUi | null;
+  const plan = ui && "plan" in ui ? ui.plan : undefined;
+  return { id: row.id, topic: row.topic, subtopic: row.selected_subtopic_label, progressStatus: row.progress_status as ProgressStatus, confidence: row.progress_confidence, lastActiveAt: row.last_active_at, plan, stepIndex: ui && "stepIndex" in ui ? ui.stepIndex : undefined, awaitingApproval: ui?.type === "plan_preview" };
 }
 
 export async function getLessonLibrary(clerkUserId: string): Promise<LessonLibrary> {
@@ -140,7 +151,7 @@ export async function getLessonLibrary(clerkUserId: string): Promise<LessonLibra
   const suggested: SuggestedLesson[] = [];
   for (const row of rows) {
     const ui = row.current_ui as LessonUi | null;
-    if (!ui || !Array.isArray(ui.nextTopics)) continue;
+    if (!ui || ui.type === "plan_preview" || !Array.isArray(ui.nextTopics)) continue;
     for (const choice of ui.nextTopics) {
       const key = choice.label.toLocaleLowerCase();
       if (used.has(key) || suggested.some((item) => item.topic.toLocaleLowerCase() === key)) continue;
@@ -175,6 +186,11 @@ export async function getRelevantMemories(userId: string): Promise<MemoryContext
   return (result.data ?? []) as MemoryContext[];
 }
 
+export async function getIntakeMemories(clerkUserId: string): Promise<MemoryContext[]> {
+  const user = await existingUser(clerkUserId);
+  return user ? getRelevantMemories(user.id) : [];
+}
+
 export async function countRecentTurns(userId: string) {
   const since = new Date(Date.now() - 10 * 60 * 1000).toISOString();
   const db = getSupabaseAdmin();
@@ -185,14 +201,15 @@ export async function countRecentTurns(userId: string) {
 }
 
 export function calculateProgress(confidenceBefore: number, evidence: EvidenceKind, _action: string) {
-  const delta: Record<EvidenceKind, number> = { understood: 18, confused: -4, engaged: 5, none: 0 };
+  const delta: Record<EvidenceKind, number> = { understood: 18, confused: -4, skipped: -2, engaged: 5, none: 0 };
   const confidence = Math.max(0, Math.min(100, confidenceBefore + delta[evidence]));
   const correctChecks = evidence === "understood" ? 1 : 0;
-  let status: ProgressStatus = confidence >= 80 ? "confident" : confidence >= 35 ? "learning" : evidence === "confused" ? "needs_review" : "exploring";
+  const needsReview = evidence === "confused" || evidence === "skipped";
+  const status: ProgressStatus = needsReview ? "needs_review" : confidence >= 80 ? "confident" : confidence >= 35 ? "learning" : "exploring";
   return { confidence, status, correctChecks };
 }
 
-export async function saveTurn(input: { session: DbSession; action: string; studentMessage: string | null; teacherMessage: string; ui: LessonUi; summary: string; phase: LearningPhase; evidence: EvidenceKind; modelId: string; memoryCandidates: MemoryCandidate[]; complete: boolean }) {
+export async function saveTurn(input: { session: DbSession; action: string; studentMessage: string | null; teacherMessage: string; ui: LessonUi; summary: string; phase: LearningPhase; evidence: EvidenceKind; modelId: string; memoryCandidates: MemoryCandidate[]; complete: boolean; evidenceConcept?: { id: string; label: string } }) {
   const db = getSupabaseAdmin();
   const update = calculateProgress(input.session.progress_confidence, input.evidence, input.action);
   const status = input.complete ? "completed" : "active";
@@ -211,8 +228,8 @@ export async function saveTurn(input: { session: DbSession; action: string; stud
       databaseError(memories.error);
     }
   }
-  const key = saved.selected_subtopic_id ?? "topic-foundations";
-  const label = saved.selected_subtopic_label ?? saved.topic;
+  const key = input.evidenceConcept?.id ?? saved.selected_subtopic_id ?? "topic-foundations";
+  const label = input.evidenceConcept?.label ?? saved.selected_subtopic_label ?? saved.topic;
   const progress = await db.from("concept_progress").upsert({ user_id: saved.user_id, session_id: saved.id, concept_key: key, concept_label: label, status: update.status, confidence: update.confidence, correct_checks: update.correctChecks, last_evidence: input.evidence, updated_at: new Date().toISOString() }, { onConflict: "session_id,concept_key" });
   databaseError(progress.error);
   return saved;

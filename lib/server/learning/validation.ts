@@ -9,15 +9,27 @@ export const startSessionSchema = z.object({
   style: z.enum(teachingStyles),
   format: z.enum(responseFormats),
   level: z.enum(learnerLevels),
+  goal: text(160),
+  stickingPoint: text(160),
+  priorKnowledge: text(160),
+  focusQuestion: text(160),
+  gradeLevel: gradeSchema.optional(),
+  pilotConsent: z.boolean().optional(),
+});
+
+export const intakeQuestionSchema = z.object({
+  topic: text(160),
+  level: z.enum(learnerLevels),
+  priorKnowledge: text(160),
   gradeLevel: gradeSchema.optional(),
   pilotConsent: z.boolean().optional(),
 });
 
 export const turnSchema = z.object({
-  action: z.enum(["understand", "confused", "ask_follow_up"]),
+  action: z.enum(["understand", "submit_check", "skip_step", "confused", "ask_follow_up", "accept_plan", "revise_plan", "start_advanced"]),
   answer: text(2_000).optional(),
 }).superRefine((value, context) => {
-  if (value.action === "ask_follow_up" && !value.answer) {
+  if ((value.action === "ask_follow_up" || value.action === "revise_plan" || value.action === "submit_check") && !value.answer) {
     context.addIssue({ code: "custom", message: "Write a short question first.", path: ["answer"] });
   }
 });
