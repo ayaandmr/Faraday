@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
+import "./landing.css";
 
 export const metadata: Metadata = {
   title: "Faraday AI | A learning path for every student",
